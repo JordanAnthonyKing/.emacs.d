@@ -7,10 +7,6 @@
 /eln-cache/
 /elpa/
 /straight/
-/pre-init.el
-/post-init.el
-/pre-early-init.el
-/post-early-init.el
 /easysession
 /transient
 /custom.el
