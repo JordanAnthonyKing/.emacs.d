@@ -1,42 +1,12 @@
 ;;; completion.el --- Configuration for completion system -*- no-byte-compile: t; lexical-binding: t; -*-
 
-;;;###autoload
-(defun +vertico/embark-preview ()
-  "Preview candidate in vertico buffer, unless it's a consult command."
-  (interactive)
-  (unless (bound-and-true-p consult--preview-function)
-    (if (fboundp 'embark-dwim)
-        (save-selected-window
-          (let (embark-quit-after-action)
-            (embark-dwim)))
-      (user-error "Embark not installed, aborting..."))))
-
-;;;###autoload
-(defun +vertico/enter-or-preview ()
-  "Enter directory or embark preview on current candidate."
-  (interactive)
-  (when (>= vertico--index 0)
-    (if (and (let ((cand (vertico--candidate)))
-               (or (string-suffix-p "/" cand)
-                   (and (vertico--remote-p cand)
-                        (string-suffix-p ":" cand))))
-             (not (equal vertico--base "")))
-        (vertico-insert)
-      (condition-case _
-          (+vertico/embark-preview)
-        (user-error (vertico-directory-enter))))))
-
-
-;;; Completion and Navigation Configuration
-
 (use-package vertico
   :ensure t
-  :defer t
+  ;; :defer t
   :commands vertico-mode
-  :hook ((after-init . vertico-mode)
-         (vertico-mode . vertico-multiform-mode))  ;; Activate multiform mode with vertico
+  :hook (vertico-mode . vertico-multiform-mode)  ;; Activate multiform mode with vertico
   :bind (:map vertico-map
-              ("C-SPC" . +vertico/embark-preview)
+              ("C-SPC" . +vertico/embark-preview)  ;; TODO: Maybe make this a function
               ("C-j"   . vertico-next)
               ("C-k"   . vertico-previous)
               ("C-h"   . vertico-directory-up)
@@ -48,15 +18,6 @@
 
   ;; Ensure vertico-multiform is loaded before configuring
   (require 'vertico-multiform)
-
-  ;; Vertico-multiform customizations
-  (defvar +vertico-transform-functions nil)
-
-  (cl-defmethod vertico--format-candidate :around
-    (cand prefix suffix index start &context ((not +vertico-transform-functions) null))
-    (dolist (fun (ensure-list +vertico-transform-functions))
-      (setq cand (funcall fun cand)))
-    (cl-call-next-method cand prefix suffix index start))
 
   (defun +vertico-highlight-directory (file)
     "If FILE ends with a slash, highlight it as a directory."
@@ -79,10 +40,12 @@
   ;; Set up multiform categories and commands
   (add-to-list 'vertico-multiform-categories
                '(file
-                 (+vertico-transform-functions . +vertico-highlight-directory)))
+                 (+vertico-highlight-directory)))
   (add-to-list 'vertico-multiform-commands
                '(execute-extended-command
-                 (+vertico-transform-functions . +vertico-highlight-enabled-mode))))
+                 (+vertico-highlight-enabled-mode)))
+  :init
+  (vertico-mode))
 
 
 (use-package orderless
@@ -97,16 +60,41 @@
 
 (use-package marginalia
   :ensure t
-  :hook (after-init . marginalia-mode)
+  :defer t
+  :commands (marginalia-mode marginalia-cycle)
   :bind (:map minibuffer-local-map
-              ("M-A" . marginalia-cycle))
+              ("M-A" . marginalia-cycle)) ;; TODO: Change to Ctrl-tab probably
   :config
-  (setq marginalia-align 'right))
+  (setq marginalia-align 'right)
+  (marginalia-mode +1))
+
+(use-package embark
+  :ensure t
+  :defer t
+  :bind (("C-;" . embark-act)
+         :map minibuffer-local-map
+         ("C-;"     . embark-act)
+         ("C-c C-;" . embark-export)
+         ("C-c C-l" . embark-collect))
+  :config
+  (global-set-key [remap describe-bindings] #'embark-bindings)
+  
+  ;; Hide the mode line of Embark live/completions buffers
+  ;;(add-to-list 'display-buffer-alist
+  ;;             '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+  ;;               nil
+  ;;               (window-parameters (mode-line-format . none))))
+)
+
+(use-package embark-consult
+  :ensure t
+  :hook (embark-collect-mode . consult-preview-at-point-mode))
 
 (use-package consult
   :ensure t
   :hook (completion-list-mode . consult-preview-at-point-mode)
   :config
+  ;; TODO: Move to a :bind, add rest
   (global-set-key [remap bookmark-jump]                 #'consult-bookmark)
   (global-set-key [remap goto-line]                     #'consult-goto-line)
   (global-set-key [remap imenu]                         #'consult-imenu)
@@ -133,6 +121,26 @@
           "--hidden" "--exclude" ".git"
           (if (eq system-type 'windows-nt) "--path-separator=/")))
 
+  ;; hide full buffer list (still available with "b" prefix)
+  (consult-customize consult--source-buffer :hidden t :default nil)
+  ;; set consult-workspace buffer list
+  (defvar consult--source-workspace
+    (list :name     "Workspace Buffers"
+          :narrow   ?w
+          :history  'buffer-name-history
+          :category 'buffer
+          :state    #'consult--buffer-state
+          :default  t
+          :items    (lambda () (consult--buffer-query
+                           :predicate #'tabspaces--local-buffer-p
+                           :sort 'visibility
+                           :as #'buffer-name)))
+  
+    "Set workspace buffer list for consult-buffer.")
+  (add-to-list 'consult-buffer-sources 'consult--source-workspace)
+
+
+  
   (consult-customize
    consult-ripgrep consult-git-grep consult-grep
    consult-bookmark consult-recent-file
@@ -143,41 +151,22 @@
    :preview-key (list "C-SPC" :debounce 0.5 'any)))
 
 (use-package consult-dir
-  :after vertico
+  :ensure t
   :bind (:map vertico-map
               ("C-x C-d" . consult-dir)
               ("C-x C-j" . consult-dir-jump-file))
   :init
-  (global-set-key [remap list-directory] #'consult-dir))
+  (global-set-key [remap list-directory] #'consult-dir)) ;; TODO: Move to bind block
 
 (use-package consult-flycheck
-  :after (consult flycheck))
+  :ensure t)
 
 (use-package consult-yasnippet
-  :defer t
-  :init
-  (global-set-key [remap yas-insert-snippet] #'consult-yasnippet))
-
-(use-package embark
   :ensure t
-  :defer t
-  :bind (("C-;" . embark-act)
-         :map minibuffer-local-map
-         ("C-;"     . embark-act)
-         ("C-c C-;" . embark-export)
-         ("C-c C-l" . embark-collect))
-  :config
-  (global-set-key [remap describe-bindings] #'embark-bindings)
-  
-  ;; Hide the mode line of Embark live/completions buffers
-  (add-to-list 'display-buffer-alist
-               '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
-                 nil
-                 (window-parameters (mode-line-format . none)))))
+  :init
+  (global-set-key [remap yas-insert-snippet] #'consult-yasnippet)) ;; Move to :bind block
 
-(use-package embark-consult
-  :after (consult embark)
-  :hook (embark-collect-mode . consult-preview-at-point-mode))
+
 
 ;;; Additional Packages
 
@@ -187,7 +176,7 @@
   (setq wgrep-auto-save-buffer t))
 
 (use-package which-key
-  :hook (after-init . which-key-mode))
+  :config (which-key-mode +1))
 
 ;;; Corfu
 ;; TODO: Bindings
@@ -205,11 +194,11 @@
               ;; Remap 'meow-insert-exit' to 'corfu-quit'
               ([remap meow-insert-exit] . #'corfu-quit)
               :map corfu-popupinfo-map
-        ("C-h"      . #'corfu-popupinfo-toggle)
-        ;; Reversed.  because popupinfo assumes opposite of what feels intuitive
-        ;; with evi. l.
-        ("C-S-k"    . #'corfu-popupinfo-scroll-down)
-        ("C-S-j"    . #'corfu-popupinfo-scroll-up))
+              ("C-h"      . #'corfu-popupinfo-toggle)
+              ;; Reversed.  because popupinfo assumes opposite of what feels intuitive
+              ;; with evi. l.
+              ("C-S-k"    . #'corfu-popupinfo-scroll-down)
+              ("C-S-j"    . #'corfu-popupinfo-scroll-up))
   :hook ((prog-mode . corfu-mode)
          (shell-mode . corfu-mode)
          (eshell-mode . corfu-mode)
@@ -244,19 +233,20 @@
 
   (setq corfu-auto t
         corfu-auto-delay 0.18
-        corfu-auto-prefix 2
-        global-corfu-modes '((not erc-mode circe-mode help-mode gud-mode vterm-mode) t)
+        corfu-auto-prefix 1 ;; NOTE: Maybe set back to 2
+        ;; global-corfu-modes '((not erc-mode circe-mode help-mode gud-mode vterm-mode) t)
         corfu-cycle t
         corfu-preselect 'prompt
-        corfu-count 16
+        corfu-count 16 ;; TODO: pick a more based number
         corfu-max-width 120
-        corfu-on-exact-match nil
+        corfu-on-exact-match nil ;; TODO: Find out what this does
         corfu-quit-at-boundary 'separator
         corfu-quit-no-match corfu-quit-at-boundary
         tab-always-indent 'complete)
 
   (add-to-list 'completion-category-overrides '(lsp-capf (styles ,@completion-styles)))
   (add-to-list 'corfu-auto-commands #'lispy-colon)
+  ;; TODO: Investigate what these do
   (add-to-list 'corfu-continue-commands #'corfu-move-to-minibuffer)
   (add-to-list 'corfu-continue-commands #'corfu-smart-sep-toggle-escape)
 
@@ -275,8 +265,8 @@
 ;;                             (timer--args timer)))))))
 
   ;; Enable terminal support if not in a graphical environment
-  (unless (display-graphic-p)
-    (corfu-terminal-mode +1))
+  ;;(unless (display-graphic-p)
+  ;;  (corfu-terminal-mode +1))
 
   ;; Enable corfu-history to maintain completion history
   (corfu-history-mode +1)
@@ -290,14 +280,10 @@
 
 
 (use-package cape
+  :ensure t
   :defer t
+  :commands (cape-dabbrev cape-file cape-elisp-block)
   :init
-  (add-hook 'prog-mode-hook
-            (lambda () (add-hook 'completion-at-point-functions #'cape-file -10 t)))
-
-  (dolist (hook '(org-mode-hook markdown-mode-hook))
-    (add-hook hook
-              (lambda () (add-hook 'completion-at-point-functions #'cape-elisp-block 0 t))))
 
   ;; Enable Dabbrev completion globally
   (setq cape-dabbrev-check-other-buffers t)
@@ -311,15 +297,6 @@
       (and (< (buffer-size other-buffer) 500000) ;; Adjust size limit for efficiency
            (not (memq other-mode my-dabbrev-ignored-buffer-modes)))))
 
-  (dolist (hook '(prog-mode-hook
-                  text-mode-hook
-                  conf-mode-hook
-                  comint-mode-hook
-                  minibuffer-setup-hook
-                  eshell-mode-hook))
-    (add-hook hook
-              (lambda () (add-hook 'completion-at-point-functions #'cape-dabbrev 20 t))))
-
   (setq dabbrev-friend-buffer-function #'+dabbrev-friend-buffer-p
         dabbrev-ignored-buffer-regexps
         '("\\` " "\\(TAGS\\|tags\\|ETAGS\\|etags\\|GTAGS\\|GRTAGS\\|GPATH\\)\\(<[0-9]+>\\)?")
@@ -328,11 +305,9 @@
   ;; Make capfs composable with LSP and other modes
   (dolist (command '(lsp-completion-at-point
                      comint-completion-at-point
-                     eglot-completion-at-point
+                     ;; eglot-completion-at-point
                      pcomplete-completions-at-point))
     (advice-add command :around #'cape-wrap-nonexclusive))
 
-  ;; Compatibility with older Emacs versions for Eshell
-  (when (< emacs-major-version 29)
-    (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-silent)
-    (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-purify)))
+  (add-hook 'completion-at-point-functions #'cape-dabbrev)
+  (add-hook 'completion-at-point-functions #'cape-file))
