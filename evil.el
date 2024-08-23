@@ -1,9 +1,17 @@
 ;;; evil.el --- >:L -*- no-byte-compile: t; lexical-binding: t; -*-
 
+(defun my-consult-buffer-or-project-buffer ()
+  "Call `consult-project-buffer` if the current buffer belongs to a known project.
+Otherwise, call `consult-buffer`."
+  (interactive)
+  (if (project-current)
+      (consult-project-buffer)
+    (consult-buffer)))
+
 ;; TODO: Consultify various and load after completion
 (defvar-keymap my-buffer-prefix-keymap
   :doc "buffers"
-  "b" #'consult-buffer
+  "b" #'my-consult-buffer-or-project-buffer
   "k" #'kill-this-buffer
   "d" #'kill-this-buffer
   "p" #'previous-buffer
@@ -27,11 +35,12 @@
   "r" #'project-recompile
   "d" #'project-find-dir
   "D" #'project-dired
-  ;; "p" #'project-switch-project
-  "p" #'tabspaces-open-or-create-project-and-workspace
+  "p" #'project-switch-project
+  ;; "p" #'tabspaces-open-or-create-project-and-workspace
   "o" #'find-sibling-file
-  "K" #'tabspaces-kill-buffers-close-workspace
-  "Q" #'tabspaces-kill-buffers-close-workspace)
+  ;;"K" #'tabspaces-kill-buffers-close-workspace
+  ;;"Q" #'tabspaces-kill-buffers-close-workspace
+  )
 
 (defvar-keymap my-window-prefix-keymap
   :doc "Windows"
@@ -101,10 +110,10 @@
   :config
   (undo-fu-session-global-mode))
 
-(use-package vim-tab-bar
-  :ensure t
-  :commands vim-tab-bar-mode
-  :config (vim-tab-bar-mode +1))
+;; (use-package vim-tab-bar
+  ;; :ensure t
+  ;; :commands vim-tab-bar-mode
+  ;; :config (vim-tab-bar-mode +1))
 
 (use-package vdiff
   :ensure t

@@ -39,6 +39,7 @@
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
 
+(setq warning-suppress-log-types '((elpaca core 31.0.50)))
 
 ;; Install use-package support
 (elpaca elpaca-use-package

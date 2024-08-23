@@ -28,7 +28,6 @@
 ;;(minimal-emacs-load-user-init "elisp.el")
 ;;(minimal-emacs-load-user-init "bindings.el")
 (minimal-emacs-load-user-init "lsp.el")
-
 (setq scroll-margin 10
       mouse-wheel-scroll-amount '(2 ((shift) . hscroll))
       mouse-wheel-progressive-speed nil)
@@ -38,15 +37,52 @@
   (interactive)
   (load-file (expand-file-name "~/.emacs.d/init.el")))
 
-(setq default-directory (getenv "HOME"))
-
-
+(use-package rainbow-mode)
+(use-package olivetti
+  :config
+  (setq olivetti-body-width 120))
 
 (set-face-attribute 'default nil :font "Berkeley Mono-10")
 (setq widget-image-enable nil)
 (use-package nano-theme
   :ensure (nano-theme :host github :repo "https://github.com/rougier/nano-theme")
+  :custom
+  (nano-light-foreground "#424142")
+  (nano-light-highlight "#e7e7e8")
+  (nano-light-subtle "#d0d1d3")
+  (nano-light-faded "#929496")
+  (nano-light-salient "#573690")
+  ;; (nano-light-strong "#573690")
+  (nano-light-popout "#a64e2c")
+  (nano-light-critical "#a72434")
   :config
+  (defcustom nano-light-string "#728c44" 
+    "Popout colour is used for information that needs attention."
+    :type 'color 
+    :group 'nano-theme-light)
+  (defcustom nano-light-blue "#2f4a95" 
+    "Popout colour is used for information that needs attention."
+    :type 'color 
+    :group 'nano-theme-light)
+
+  ;; Define the `nano-string` face directly and then apply it.
+  (defface nano-string 
+    `((t (:foreground ,nano-light-string)))
+    "Face for strings in nano light theme."
+    :group 'nano-theme-light)
+  (defface nano-blue
+    `((t (:foreground ,nano-light-blue)))
+    "Face for strings in nano light theme."
+    :group 'nano-theme-light)
+
+  ;; Apply the `nano-string` face to `font-lock-string-face`
+  (custom-set-faces
+   '(font-lock-string-face ((t (:inherit nano-string))))
+   '(font-lock-built-in-face ((t (:inherit nano-blue))))
+   '(font-lock-keyword-face ((t (:inherit nano-blue))))
+   '(font-lock-type-face ((t (:inherit nano-popout))))
+   )
+  
   (nano-light)
   (load-theme 'nano t))
 
@@ -57,7 +93,7 @@
   ;;  '((":TODO:" . ((lambda (tag) (svg-tag-make " ! " :face 'nano-critical))))))
   (global-svg-tag-mode +1))
 
-(setq project-vc-ignores '("target/" "bin/" "obj/")
+(setq project-vc-ignores '("target/" "bin/" "obj/" "node_modules/")
       project-vc-extra-root-markers '(".project"
                                       "go.mod"
                                       "Cargo.toml"
@@ -70,38 +106,17 @@
                                       "README.md"))
 
 
-(use-package tabspaces
-  :commands (tabspaces-switch-or-create-workspace
-             tabspaces-open-or-create-project-and-workspace)
-  :custom
-  (tabspaces-use-filtered-buffers-as-default t)
-  (tabspaces-default-tab "¯\_(ツ)_/¯")
-  (tabspaces-remove-to-default t)
-  (tabspaces-include-buffers '("*scratch*"))
-  ;; (tabspaces-initialize-project-with-todo t)
-  ;; (tabspaces-todo-file-name "project-todo.org")
-  ;; sessions
-  (tabspaces-session t)
-  ;; (tabspaces-session-auto-restore t)
+(use-package tab-bar-echo-area
+  :ensure t
+  :config
+  (tab-bar-echo-area-mode 1))
+
+(use-package project-tab-groups
+  :after tab-bar-echo-area
+  :ensure t
   :config
   (setq tab-bar-show nil)
-  ;; Filter Buffers for Consult-Buffer
-  ;; hide full buffer list (still available with "b" prefix)
-  (consult-customize consult--source-buffer :hidden t :default nil)
-  ;; set consult-workspace buffer list
-  (defvar consult--source-workspace
-    (list :name     "Workspace Buffers"
-          :narrow   ?w
-          :history  'buffer-name-history
-          :category 'buffer
-          :state    #'consult--buffer-state
-          :default  t
-          :items    (lambda () (consult--buffer-query
-                           :predicate #'tabspaces--local-buffer-p
-                           :sort 'visibility
-                           :as #'buffer-name)))
-  
-    "Set workspace buffer list for consult-buffer.")
-  (add-to-list 'consult-buffer-sources 'consult--source-workspace)
-
-  (tabspaces-mode))
+  (setq tab-bar-format '(tab-bar-format-history tab-bar-format-tabs-groups tab-bar-separator tab-bar-format-add-tab))
+  (push #'project-switch-project tab-bar-echo-area-trigger-display-functions)
+  (tab-bar-echo-area-apply-display-tab-names-advice)
+  (project-tab-groups-mode 1))
