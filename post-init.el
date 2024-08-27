@@ -44,47 +44,85 @@
 
 (set-face-attribute 'default nil :font "Berkeley Mono-10")
 (setq widget-image-enable nil)
-(use-package nano-theme
-  :ensure (nano-theme :host github :repo "https://github.com/rougier/nano-theme")
-  :custom
-  (nano-light-foreground "#424142")
-  (nano-light-highlight "#e7e7e8")
-  (nano-light-subtle "#d0d1d3")
-  (nano-light-faded "#929496")
-  (nano-light-salient "#573690")
-  ;; (nano-light-strong "#573690")
-  (nano-light-popout "#a64e2c")
-  (nano-light-critical "#a72434")
+;; (use-package nano-theme
+  ;; :ensure (nano-theme :host github :repo "https://github.com/rougier/nano-theme")
+  ;; :custom
+  ;; (nano-light-foreground "#424142")
+  ;; (nano-light-highlight "#e7e7e8")
+  ;; (nano-light-subtle "#d0d1d3")
+  ;; (nano-light-faded "#929496")
+  ;; (nano-light-salient "#573690")
+  ;; ;; (nano-light-strong "#573690")
+  ;; (nano-light-popout "#a64e2c")
+  ;; (nano-light-critical "#a72434")
+;; 
+;; 
+  ;; (nano-dark-foreground "#d1d6df")
+  ;; (nano-dark-background "#000000")
+  ;; ;; (nano-dark-highlight "#e7e7e8")
+  ;; ;; (nano-dark-subtle "#d0d1d3")
+  ;; ;; (nano-dark-faded "#929496")
+  ;; (nano-dark-salient "#875afc")
+  ;; ;; (nano-dark-strong "#573690")
+  ;; (nano-dark-popout "#ffc200")
+  ;; (nano-dark-critical "#ca2837")
+  ;; :config
+  ;; (defcustom nano-dark-string "#019a5e" 
+    ;; "Popout colour is used for information that needs attention."
+    ;; :type 'color 
+    ;; :group 'nano-theme-dark)
+  ;; (defcustom nano-dark-blue "#08a2ff" 
+    ;; "Popout colour is used for information that needs attention."
+    ;; :type 'color 
+    ;; :group 'nano-theme-dark)
+;; 
+  ;; ;; Define the `nano-string` face directly and then apply it.
+  ;; (defface nano-string 
+    ;; `((t (:foreground ,nano-dark-string)))
+    ;; "Face for strings in nano light theme."
+    ;; :group 'nano-theme-dark)
+  ;; (defface nano-blue
+    ;; `((t (:foreground ,nano-dark-blue)))
+    ;; "Face for strings in nano light theme."
+    ;; :group 'nano-theme-dark)
+;; 
+  ;; ;; Apply the `nano-string` face to `font-lock-string-face`
+  ;; (custom-set-faces
+   ;; '(font-lock-string-face ((t (:inherit nano-string))))
+   ;; '(font-lock-built-in-face ((t (:inherit nano-blue))))
+   ;; '(font-lock-keyword-face ((t (:inherit nano-blue))))
+   ;; '(font-lock-type-face ((t (:inherit nano-popout))))
+   ;; )
+ ;;  
+  ;; ;; (nano-dark)
+  ;; ;; (load-theme 'nano t)
+  ;; )
+
+(setq custom-safe-themes t)
+;; (use-package doom-themes
+  ;; :ensure t
+  ;; :config
+  ;; ;; Global settings (defaults)
+  ;; (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+        ;; doom-themes-enable-italic t) ; if nil, italics is universally disabled
+;; 
+  ;; (load-theme 'doom-one t)
+ ;;  
+  ;; ;; Enable flashing mode-line on errors
+  ;; ;; (doom-themes-visual-bell-config)
+  ;; ;; Enable custom neotree theme (all-the-icons must be installed!)
+  ;; (doom-themes-neotree-config)
+  ;; ;; or for treemacs users
+  ;; (setq doom-themes-treemacs-theme "doom-atom") ; use "doom-colors" for less minimal icon theme
+  ;; (doom-themes-treemacs-config)
+  ;; ;; Corrects (and improves) org-mode's native fontification.
+  ;; (doom-themes-org-config))
+
+  (use-package kanagawa-theme
+  :demand
   :config
-  (defcustom nano-light-string "#728c44" 
-    "Popout colour is used for information that needs attention."
-    :type 'color 
-    :group 'nano-theme-light)
-  (defcustom nano-light-blue "#2f4a95" 
-    "Popout colour is used for information that needs attention."
-    :type 'color 
-    :group 'nano-theme-light)
+  (load-theme 'kanagawa))
 
-  ;; Define the `nano-string` face directly and then apply it.
-  (defface nano-string 
-    `((t (:foreground ,nano-light-string)))
-    "Face for strings in nano light theme."
-    :group 'nano-theme-light)
-  (defface nano-blue
-    `((t (:foreground ,nano-light-blue)))
-    "Face for strings in nano light theme."
-    :group 'nano-theme-light)
-
-  ;; Apply the `nano-string` face to `font-lock-string-face`
-  (custom-set-faces
-   '(font-lock-string-face ((t (:inherit nano-string))))
-   '(font-lock-built-in-face ((t (:inherit nano-blue))))
-   '(font-lock-keyword-face ((t (:inherit nano-blue))))
-   '(font-lock-type-face ((t (:inherit nano-popout))))
-   )
-  
-  (nano-light)
-  (load-theme 'nano t))
 
 (use-package svg-tag-mode
   :ensure (svg-tag-mode :host github :repo "https://github.com/rougier/svg-tag-mode")
@@ -120,3 +158,5 @@
   (push #'project-switch-project tab-bar-echo-area-trigger-display-functions)
   (tab-bar-echo-area-apply-display-tab-names-advice)
   (project-tab-groups-mode 1))
+
+(use-package helpful)
