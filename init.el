@@ -8,9 +8,9 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
-;; This is the main initialization file for Emacs. It configures package
-;; archives, ensures essential packages like `use-package` are installed, and
-;; sets up further package management and customization settings.
+;; The minimal-emacs.d starter kit provides improved Emacs defaults and
+;; optimized startup, intended to serve as a solid foundation for your vanilla
+;; Emacs configuration and enhance your overall Emacs experience.
 
 ;;; Code:
 
@@ -18,40 +18,21 @@
 (minimal-emacs-load-user-init "pre-init.el")
 
 ;;; package.el
-
-(require 'package)
-
-(when (version< emacs-version "28")
-  (add-to-list 'package-archives
-               '("nongnu" . "https://elpa.nongnu.org/nongnu/")))
-(add-to-list 'package-archives
-             '("melpa-stable" . "https://stable.melpa.org/packages/"))
-(add-to-list 'package-archives
-             '("melpa" . "https://melpa.org/packages/"))
-
-(customize-set-variable 'package-archive-priorities
-                        '(("gnu"    . 99)
-                          ("nongnu" . 80)
-                          ("stable" . 70)
-                          ("melpa"  . 0)))
-
-(when package-enable-at-startup
+(when (bound-and-true-p minimal-emacs-package-initialize-and-refresh)
+  ;; Initialize and refresh package contents again if needed
   (package-initialize)
   (unless package-archive-contents
-    (package-refresh-contents t)))
+    (package-refresh-contents))
 
-;;; use-package
-;; Load use-package for package configuration
+  ;; Install use-package if necessary
+  (unless (package-installed-p 'use-package)
+    (package-install 'use-package))
 
-;; Ensure the 'use-package' package is installed and loaded
-(unless (package-installed-p 'use-package)
-  (package-refresh-contents t)
-  (package-install 'use-package)
+  ;; Ensure use-package is available at compile time
   (eval-when-compile
     (require 'use-package)))
 
-(eval-when-compile
-  (require 'use-package))
+;; Ensure the 'use-package' package is installed and loaded
 
 ;;; Minibuffer
 ;; Allow nested minibuffers
@@ -212,17 +193,25 @@
 
 (setq resize-mini-windows 'grow-only)
 
-;;; Smooth scrolling
+;;; Scrolling
 ;; Enables faster scrolling through unfontified regions. This may result in
 ;; brief periods of inaccurate syntax highlighting immediately after scrolling,
 ;; which should quickly self-correct.
 (setq fast-but-imprecise-scrolling t)
 
+;; Move point to top/bottom of buffer before signaling a scrolling error.
+(setq scroll-error-top-bottom t)
+
+;; Keeps screen position if the scroll command moved it vertically out of the
+;; window.
+(setq scroll-preserve-screen-position t)
+
 ;;; Mouse
 
 ;; Emacs 29
-(when (and (display-graphic-p) (fboundp 'context-menu-mode))
-  (add-hook 'after-init-hook #'context-menu-mode))
+(when (memq 'context-menu minimal-emacs-ui-features)
+  (when (and (display-graphic-p) (fboundp 'context-menu-mode))
+    (add-hook 'after-init-hook #'context-menu-mode)))
 
 (setq hscroll-margin 2
       hscroll-step 1
@@ -295,7 +284,8 @@
 (setq-default indent-tabs-mode nil
               tab-width 4)
 
-(setq-default tab-always-indent t)
+;; Enable indentation and completion using the TAB key
+(setq-default tab-always-indent nil)
 
 ;; Enable multi-line commenting which ensures that `comment-indent-new-line'
 ;; properly continues comments onto new lines, which is useful for writing
@@ -341,10 +331,23 @@
 ;; Do not notify the user each time Python tries to guess the indentation offset
 (setq python-indent-guess-indent-offset-verbose nil)
 
+(setq sh-indent-after-continuation 'always)
+
+(setq dired-clean-confirm-killing-deleted-buffers nil
+      dired-recursive-deletes 'top
+      dired-recursive-copies  'always
+      dired-create-destination-dirs 'ask)
+
 ;;; Font / Text scale
 
 ;; Avoid automatic frame resizing when adjusting settings.
 (setq global-text-scale-adjust-resizes-frames nil)
+
+;;; Ediff
+
+;; Configure Ediff to use a single frame and split windows horizontally
+(setq ediff-window-setup-function #'ediff-setup-windows-plain
+      ediff-split-window-function #'split-window-horizontally)
 
 ;;; Load post-init.el
 (minimal-emacs-load-user-init "post-init.el")

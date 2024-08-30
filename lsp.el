@@ -17,11 +17,24 @@
   (setq lsp-enable-folding nil
         lsp-enable-text-document-color nil)
   (setq lsp-enable-on-type-formatting nil)
+
+  (setq lsp-headerline-breadcrumb-segments '(symbols))
   (setq lsp-headerline-breadcrumb-enable nil)
   (setq lsp-completion-provider :none)
+  (setq lsp-enable-snippet nil)
+  ;; (setq lsp-semantic-tokens-apply-modifiers nil)
   (setq lsp-semantic-tokens-apply-modifiers nil
-        lsp-semantic-tokens-enable t
-        lsp-semantic-tokens-warn-on-missing-face t)
+        lsp-semantic-tokens-enable nil
+        lsp-semantic-tokens-warn-on-missing-face nil)
+  (setq lsp-lens-enable nil
+        lsp-completion-show-detail nil
+        lsp-signature-render-documentation nil)
+  ;; HACK: https://www.reddit.com/r/emacs/comments/wdqjxu/lspeslintservercommand_not_working_anymore/
+  ;; (setq lsp-eslint-server-command '("vscode-eslint-language-server" "--stdio"))
+  ;; (setq lsp-eslint-working-directories "./*")
+  (setq lsp-enable-file-watchers t
+        lsp-file-watch-threshold 9001)
+  ;; (setq flycheck-checker-error-threshold 9001)
   (add-hook 'lsp-mode-hook #'lsp-completion-mode)
   (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration)
   :config
@@ -39,16 +52,21 @@
   (add-to-list 'find-sibling-rules
                '("\\(.+\\)\\.component\\.ts\\'" "\\1.component.html")))
 
-(add-hook 'typescript-mode-hook 'ts-mode-add-sibling-rule)
-
-
+(add-hook 'typescript-ts-mode-hook 'ts-mode-add-sibling-rule)
 
 (defun angular-ts-mode-add-sibling-rule ()
   "Add sibling rule for Angular HTML files to match with TypeScript files."
   (add-to-list 'find-sibling-rules
-               '("\\(.+\\)\\.component\\.html\\'" "\\1.component.ts")))
+               '("\\(.+\\)\\.component\\.html\\'" "\\1.component.ts"))
+  (add-to-list 'find-sibling-rules
+               '("\\(.+\\)\\.container\\.html\\'" "\\1.component.ts")))
 
 (add-hook 'angular-ts-mode-hook 'angular-ts-mode-add-sibling-rule)
+
+;; (use-package prettier
+  ;; :ensure t
+  ;; :hook (typescript-ts-mode . prettier-mode)
+  ;; :hook (angular-ts-mode . prettier-mode))
 
 (use-package indent-bars
   :ensure (indent-bars :host github :repo "jdtsmith/indent-bars")

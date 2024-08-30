@@ -8,70 +8,68 @@ Otherwise, call `consult-buffer`."
       (consult-project-buffer)
     (consult-buffer)))
 
-;; TODO: Consultify various and load after completion
-(defvar-keymap my-buffer-prefix-keymap
-  :doc "buffers"
-  "b" #'my-consult-buffer-or-project-buffer
-  "k" #'kill-this-buffer
-  "d" #'kill-this-buffer
-  "p" #'previous-buffer
-  "n" #'next-buffer
-  "B" #'consult-buffer
-  "r" #'rename-buffer
-  "R" #'revert-buffer)
+(use-package general
+  :ensure (:wait t)
+  :demand t)
 
-(defvar-keymap my-file-prefix-keymap
-  :doc "Files"
-  "f" #'find-file
-  "d" #'dired-jump
-  "r" #'consult-recentf)
+(require 'general)
 
-(defvar-keymap my-project-prefix-keymap
-  :doc "Projects"
-  "f" #'project-find-file
-  "!" #'project-shell-command
-  "&" #'project-async-shell-command
-  "c" #'project-compile
-  "r" #'project-recompile
-  "d" #'project-find-dir
-  "D" #'project-dired
-  "p" #'project-switch-project
-  ;; "p" #'tabspaces-open-or-create-project-and-workspace
-  "o" #'find-sibling-file
-  ;;"K" #'tabspaces-kill-buffers-close-workspace
-  ;;"Q" #'tabspaces-kill-buffers-close-workspace
-  )
+(general-create-definer my-leader-def
+  :states '(normal visual motion)  ;; Apply to these evil states
+  :keymaps 'override                ;; Ensure it overrides other keymaps
+  :prefix "SPC")                    ;; Set "SPC" as the prefix key
 
-(defvar-keymap my-window-prefix-keymap
-  :doc "Windows"
-  "h" #'windmove-left
-  "j" #'windmove-down
-  "k" #'windmove-up
-  "l" #'windmove-right
-  "H" #'windmove-swap-states-left
-  "J" #'windmove-swap-states-down
-  "K" #'windmove-swap-states-up
-  "L" #'windmove-swap-states-right
-  "d" #'delete-window
-  "D" #'delete-other-windows
-  "s" #'split-window-vertically
-  "v" #'split-window-horizontally)
+(my-leader-def
+  "b" '(:ignore t :which-key "buffers")
+  "b b" #'my-consult-buffer-or-project-buffer
+  "b k" #'kill-buffer
+  "b d" #'kill-buffer
+  "b p" #'previous-buffer
+  "b n" #'next-buffer
+  "b B" #'consult-buffer
+  "b r" #'rename-buffer
+  "b R" #'revert-buffer
 
-(defvar-keymap my-tabs-prefix-keymap
-  :doc "Workspaces"
-  "TAB" #'tab-bar-echo-area-display-tab-names)
+  "f" '(:ignore t :which-key "files")
+  "f f" #'find-file
+  "f d" #'dired-jump
+  "f r" #'consult-recentf
 
-(defvar-keymap my-leader-prefix-keymap
-  :doc leader
-  "b" my-buffer-prefix-keymap
-  "f" my-file-prefix-keymap
-  "p" my-project-prefix-keymap
-  "w" my-window-prefix-keymap
+  "p" '(:ignore t :which-key "projects")
+  "p f" #'project-find-file
+  "p !" #'project-shell-command
+  "p &" #'project-async-shell-command
+  "p c" #'project-compile
+  "p r" #'project-recompile
+  "p d" #'project-find-dir
+  "p D" #'project-dired
+  "p p" #'project-switch-project
+  ;; "p p" #'tabspaces-open-or-create-project-and-workspace
+  "p o" #'find-sibling-file
+  ;; "p K" #'tabspaces-kill-buffers-close-workspace
+  ;; "p Q" #'tabspaces-kill-buffers-close-workspace
+
+  "w" '(:ignore t :which-key "windows")
+  "w h" #'windmove-left
+  "w j" #'windmove-down
+  "w k" #'windmove-up
+  "w l" #'windmove-right
+  "w H" #'windmove-swap-states-left
+  "w J" #'windmove-swap-states-down
+  "w K" #'windmove-swap-states-up
+  "w L" #'windmove-swap-states-right
+  "w d" #'delete-window
+  "w D" #'delete-other-windows
+  "w s" #'split-window-vertically
+  "w v" #'split-window-horizontally
+
+  "TAB" '(:ignore t :which-key "workspaces")
+  "TAB TAB" #'tab-bar-echo-area-display-tab-names
+
   "SPC" #'execute-extended-command
   ";" #'eval-expression
   "h" help-map
-  "." #'vertico-repeat
-  "TAB" my-tabs-prefix-keymap)
+  "." #'vertico-repeat)
 
 ;; evil-want-keybinding must be declared before Evil and Evil Collection
 (setq evil-want-keybinding nil)
@@ -84,8 +82,6 @@ Otherwise, call `consult-buffer`."
   (setq evil-want-keybinding nil)
   :config
   (evil-select-search-module 'evil-search-module 'evil-search)
-  (evil-set-leader nil (kbd "SPC"))
-  (evil-define-key 'normal 'global (kbd "<leader>") my-leader-prefix-keymap)
   (evil-mode 1))
 
 (use-package evil-collection
@@ -93,6 +89,7 @@ Otherwise, call `consult-buffer`."
   :ensure t
   :config
   (evil-collection-init))
+
 
 (use-package undo-fu
   :ensure t
@@ -113,19 +110,43 @@ Otherwise, call `consult-buffer`."
 ;; (use-package vim-tab-bar
   ;; :ensure t
   ;; :commands vim-tab-bar-mode
-  ;; :config (vim-tab-bar-mode +1))
+  ;; :hook (elpaca-after-init-hook . vim-tab-bar-mode))
 
-(use-package vdiff
+;; (use-package vdiff
+  ;; :ensure t
+  ;; :defer t
+  ;; :commands (vdiff-buffers
+             ;; vdiff-buffers3
+             ;; vdiff-quit
+             ;; vdiff-files
+             ;; vdiff-files3)
+  ;; :custom
+  ;; (vdiff-auto-refine t)
+  ;; (vdiff-only-highlight-refinements t))
+
+(defun add-language-to-mode-alist (mode lang)
+  "Add or update the association of MODE with LANG in `evil-textobj-tree-sitter-major-mode-language-alist`."
+  (let ((entry (assq mode evil-textobj-tree-sitter-major-mode-language-alist)))
+    (if entry
+        ;; Update existing entry
+        (setcdr entry lang)
+      ;; Add new entry
+      (add-to-list 'evil-textobj-tree-sitter-major-mode-language-alist
+                   (cons mode lang) t))))
+
+(use-package evil-textobj-tree-sitter
   :ensure t
-  :defer t
-  :commands (vdiff-buffers
-             vdiff-buffers3
-             vdiff-quit
-             vdiff-files
-             vdiff-files3)
-  :custom
-  (vdiff-auto-refine t)
-  (vdiff-only-highlight-refinements t))
+  :after evil
+  :config
+  (add-language-to-mode-alist 'typescript-ts-mode "typescript")
+  (define-key evil-outer-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.outer"))
+  (define-key evil-inner-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.inner"))
+  (define-key evil-outer-text-objects-map "c" (evil-textobj-tree-sitter-get-textobj "class.outer"))
+  (define-key evil-inner-text-objects-map "c" (evil-textobj-tree-sitter-get-textobj "class.inner"))
+  (define-key evil-outer-text-objects-map "l" (evil-textobj-tree-sitter-get-textobj "loop.outer"))
+  (define-key evil-inner-text-objects-map "l" (evil-textobj-tree-sitter-get-textobj "loop.inner"))
+  (define-key evil-outer-text-objects-map "i" (evil-textobj-tree-sitter-get-textobj "conditional.outer"))
+  (define-key evil-inner-text-objects-map "i" (evil-textobj-tree-sitter-get-textobj "conditional.inner")))
 
 (use-package evil-visualstar
   :after evil
@@ -144,19 +165,17 @@ Otherwise, call `consult-buffer`."
    '((?\( . ("(" . ")"))
      (?\[ . ("[" . "]"))
      (?\{ . ("{" . "}"))
-
      (?\) . ("(" . ")"))
      (?\] . ("[" . "]"))
      (?\} . ("{" . "}"))
-
      (?< . ("<" . ">"))
      (?> . ("<" . ">"))))
   :config (global-evil-surround-mode +1))
 
-;;(with-eval-after-load "evil"
-;;  (evil-define-operator my-evil-comment-or-uncomment (beg end)
-;;    "Toggle comment for the region between BEG and END."
-;;    (interactive "<r>")
-;;    (comment-or-uncomment-region beg end))
-;;  (evil-define-key 'normal 'global (kbd "gc") 'my-evil-comment-or-uncomment))
-
+;; TODO: Command to comment a line
+;; (with-eval-after-load "evil"
+;;   (evil-define-operator my-evil-comment-or-uncomment (beg end)
+;;     "Toggle comment for the region between BEG and END."
+;;     (interactive "<r>")
+;;     (comment-or-uncomment-region beg end))
+;;   (evil-define-key 'normal 'global (kbd "gc") 'my-evil-comment-or-uncomment))

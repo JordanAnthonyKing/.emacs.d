@@ -1,9 +1,14 @@
 ;;; post-init.el --- DESCRIPTION -*- no-byte-compile: t; lexical-binding: t; -*-
 
-(add-hook 'after-init-hook #'global-auto-revert-mode)
-(add-hook 'after-init-hook #'recentf-mode)
-(add-hook 'after-init-hook #'savehist-mode)
-(add-hook 'after-init-hook #'save-place-mode)
+(add-hook 'elpaca-after-init-hook #'global-auto-revert-mode)
+;; (add-hook 'elpaca-after-init-hook #'recentf-mode)
+(add-hook 'elpaca-after-init-hook #'savehist-mode)
+(add-hook 'elpaca-after-init-hook #'save-place-mode)
+(setq auto-save-file-name-transforms '((".*" "~/.emacs.d/autosaves/\\1" t)))
+(setq backup-directory-alist '((".*" . "~/.emacs.d/backups/")))
+
+;; create the autosave dir if necessary, since emacs won't.
+(make-directory "~/.emacs.d/autosaves/" t)
 
 (use-package auto-compile
   :demand t
@@ -16,11 +21,11 @@
 
 (use-package gcmh
   :ensure t
+  :hook (elpaca-after-init . gcmh-mode)
   :custom
   (gcmh-idle-delay 'auto)
   (gcmh-auto-idle-delay-factor 10)
-  (gcmh-low-cons-threshold minimal-emacs-gc-cons-threshold)
-  :config (gcmh-mode +1))
+  (gcmh-low-cons-threshold minimal-emacs-gc-cons-threshold))
 
 (minimal-emacs-load-user-init "evil.el")
 (minimal-emacs-load-user-init "completion.el")
@@ -42,7 +47,7 @@
   :config
   (setq olivetti-body-width 120))
 
-(set-face-attribute 'default nil :font "Berkeley Mono-10")
+(set-face-attribute 'default nil :font "Berkeley Mono-9")
 (setq widget-image-enable nil)
 ;; (use-package nano-theme
   ;; :ensure (nano-theme :host github :repo "https://github.com/rougier/nano-theme")
@@ -149,14 +154,52 @@
   :config
   (tab-bar-echo-area-mode 1))
 
-(use-package project-tab-groups
-  :after tab-bar-echo-area
-  :ensure t
-  :config
-  (setq tab-bar-show nil)
-  (setq tab-bar-format '(tab-bar-format-history tab-bar-format-tabs-groups tab-bar-separator tab-bar-format-add-tab))
-  (push #'project-switch-project tab-bar-echo-area-trigger-display-functions)
-  (tab-bar-echo-area-apply-display-tab-names-advice)
-  (project-tab-groups-mode 1))
+;; (use-package project-tab-groups
+  ;; :after tab-bar-echo-area
+  ;; :ensure t
+  ;; :config
+  ;; (setq tab-bar-show nil)
+  ;; (setq tab-bar-format '(tab-bar-format-history tab-bar-format-tabs-groups tab-bar-separator tab-bar-format-add-tab))
+  ;; (push #'project-switch-project tab-bar-echo-area-trigger-display-functions)
+  ;; (tab-bar-echo-area-apply-display-tab-names-advice)
+  ;; (project-tab-groups-mode 1))
+
+
+
+
 
 (use-package helpful)
+
+(setq explicit-shell-file-name "pwsh.exe")
+(use-package eat
+  :ensure (eat :host codeberg
+               :repo "thearcticcat/emacs-eat"
+               :branch "windows-hack"
+               :files ("*.el" ("term" "term/*.el") "*.texi"
+                       "*.ti" ("terminfo/e" "terminfo/e/*")
+                       ("terminfo/65" "terminfo/65/*")
+                       ("integration" "integration/*")
+                       (:exclude ".dir-locals.el" "*-tests.el")))
+  :config
+  (add-hook `eat-mode-hook (lambda () (setq-local scroll-conservatively 10000))))
+
+(use-package visual-fill-column
+  :ensure (visual-fill-column :host codeberg
+                              :repo "joostkremers/visual-fill-column"))
+
+
+
+
+;; (use-package eaf
+  ;; :load-path "~/.emacs.d/site-lisp/emacs-application-framework"
+  ;; :custom
+  ;; ; See https://github.com/emacs-eaf/emacs-application-framework/wiki/Customization
+  ;; (eaf-browser-continue-where-left-off t)
+  ;; (eaf-browser-enable-adblocker t)
+  ;; (browse-url-browser-function 'eaf-open-browser)
+  ;; :config
+  ;; (require 'eaf-browser)
+  ;; (setq eaf-browser-dark-mode nil
+        ;; eaf-browser-enable-autofill t
+        ;; eaf-browser-enable-adblock t)
+  ;; (defalias 'browse-web #'eaf-open-browser))

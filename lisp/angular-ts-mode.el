@@ -357,8 +357,9 @@ Return nil if there is no name or if NODE is not a defun node."
 
 (derived-mode-add-parents 'angular-ts-mode '(angular-mode))
 
-(if (treesit-ready-p 'angular)
-    (add-to-list 'auto-mode-alist '("\\.component\\.html\\'" . angular-ts-mode)))
+(when (treesit-ready-p 'angular)
+  (add-to-list 'auto-mode-alist '("\\.component\\.html\\'" . angular-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.container\\.html\\'" . angular-ts-mode)))
 
 (provide 'angular-ts-mode)
 
