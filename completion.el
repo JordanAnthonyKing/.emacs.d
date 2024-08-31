@@ -278,7 +278,7 @@ Supports exporting consult-grep to wgrep, file to wdeired, and consult-location 
 
   ;; Additional keybindings for embark-file-map
   (general-def 'embark-file-map
-              :desc "Open target with sudo"       "s"   #'doom/sudo-find-file
+              ;; :desc "Open target with sudo"       "s"   #'doom/sudo-find-file
               :desc "Open magit-status of target" "g"   #'+vertico/embark-magit-status))
 
 (use-package embark-consult

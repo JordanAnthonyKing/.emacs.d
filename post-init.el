@@ -4,11 +4,13 @@
 ;; (add-hook 'elpaca-after-init-hook #'recentf-mode)
 (add-hook 'elpaca-after-init-hook #'savehist-mode)
 (add-hook 'elpaca-after-init-hook #'save-place-mode)
-(setq auto-save-file-name-transforms '((".*" "~/.emacs.d/autosaves/\\1" t)))
-(setq backup-directory-alist '((".*" . "~/.emacs.d/backups/")))
+
+;; TODO: Make this work wtih minimal emacs paths
+(setq auto-save-file-name-transforms '((".*" "~/.emacs.d/var/autosaves/\\1" t)))
+(setq backup-directory-alist '((".*" . "~/.emacs.d/var/backups/")))
 
 ;; create the autosave dir if necessary, since emacs won't.
-(make-directory "~/.emacs.d/autosaves/" t)
+(make-directory "~/.emacs.d/var/autosaves/" t)
 
 (use-package auto-compile
   :demand t
@@ -27,25 +29,30 @@
   (gcmh-auto-idle-delay-factor 10)
   (gcmh-low-cons-threshold minimal-emacs-gc-cons-threshold))
 
+
+
+(use-package general
+  :ensure (:wait t)
+  :demand t)
+
 (minimal-emacs-load-user-init "evil.el")
+;; TODO: Rename to vertico
 (minimal-emacs-load-user-init "completion.el")
+;; (minimal-emacs-load-user-init "corfu.el")
+;; TODO: Separate from evil
 ;;(minimal-emacs-load-user-init "bindings.el")
 ;;(minimal-emacs-load-user-init "elisp.el")
 ;;(minimal-emacs-load-user-init "bindings.el")
 (minimal-emacs-load-user-init "lsp.el")
-(setq scroll-margin 10
-      mouse-wheel-scroll-amount '(2 ((shift) . hscroll))
-      mouse-wheel-progressive-speed nil)
 
-(defun reload-init-file ()
-  "Reload the Emacs configuration file."
-  (interactive)
-  (load-file (expand-file-name "~/.emacs.d/init.el")))
+(setq scroll-margin 10)
+      ;; mouse-wheel-scroll-amount '(2 ((shift) . hscroll))
+      ;; mouse-wheel-progressive-speed nil)
 
 (use-package rainbow-mode)
-(use-package olivetti
-  :config
-  (setq olivetti-body-width 120))
+;; (use-package olivetti
+  ;; :config
+  ;; (setq olivetti-body-width 120))
 
 (set-face-attribute 'default nil :font "Berkeley Mono-9")
 (setq widget-image-enable nil)
@@ -104,24 +111,6 @@
   ;; )
 
 (setq custom-safe-themes t)
-;; (use-package doom-themes
-  ;; :ensure t
-  ;; :config
-  ;; ;; Global settings (defaults)
-  ;; (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
-        ;; doom-themes-enable-italic t) ; if nil, italics is universally disabled
-;; 
-  ;; (load-theme 'doom-one t)
- ;;  
-  ;; ;; Enable flashing mode-line on errors
-  ;; ;; (doom-themes-visual-bell-config)
-  ;; ;; Enable custom neotree theme (all-the-icons must be installed!)
-  ;; (doom-themes-neotree-config)
-  ;; ;; or for treemacs users
-  ;; (setq doom-themes-treemacs-theme "doom-atom") ; use "doom-colors" for less minimal icon theme
-  ;; (doom-themes-treemacs-config)
-  ;; ;; Corrects (and improves) org-mode's native fontification.
-  ;; (doom-themes-org-config))
 
   (use-package kanagawa-theme
   :demand
@@ -129,12 +118,12 @@
   (load-theme 'kanagawa))
 
 
-(use-package svg-tag-mode
-  :ensure (svg-tag-mode :host github :repo "https://github.com/rougier/svg-tag-mode")
-  :config
-  ;;(setq svg-tag-tags
-  ;;  '((":TODO:" . ((lambda (tag) (svg-tag-make " ! " :face 'nano-critical))))))
-  (global-svg-tag-mode +1))
+;; (use-package svg-tag-mode
+  ;; :ensure (svg-tag-mode :host github :repo "https://github.com/rougier/svg-tag-mode")
+  ;; :config
+  ;; ;;(setq svg-tag-tags
+  ;; ;;  '((":TODO:" . ((lambda (tag) (svg-tag-make " ! " :face 'nano-critical))))))
+  ;; (global-svg-tag-mode +1))
 
 (setq project-vc-ignores '("target/" "bin/" "obj/" "node_modules/")
       project-vc-extra-root-markers '(".project"
@@ -149,10 +138,10 @@
                                       "README.md"))
 
 
-(use-package tab-bar-echo-area
-  :ensure t
-  :config
-  (tab-bar-echo-area-mode 1))
+;; (use-package tab-bar-echo-area
+  ;; :ensure t
+  ;; :config
+  ;; (tab-bar-echo-area-mode 1))
 
 ;; (use-package project-tab-groups
   ;; :after tab-bar-echo-area
@@ -164,11 +153,7 @@
   ;; (tab-bar-echo-area-apply-display-tab-names-advice)
   ;; (project-tab-groups-mode 1))
 
-
-
-
-
-(use-package helpful)
+;; (use-package helpful)
 
 (setq explicit-shell-file-name "pwsh.exe")
 (use-package eat
@@ -187,19 +172,3 @@
   :ensure (visual-fill-column :host codeberg
                               :repo "joostkremers/visual-fill-column"))
 
-
-
-
-;; (use-package eaf
-  ;; :load-path "~/.emacs.d/site-lisp/emacs-application-framework"
-  ;; :custom
-  ;; ; See https://github.com/emacs-eaf/emacs-application-framework/wiki/Customization
-  ;; (eaf-browser-continue-where-left-off t)
-  ;; (eaf-browser-enable-adblocker t)
-  ;; (browse-url-browser-function 'eaf-open-browser)
-  ;; :config
-  ;; (require 'eaf-browser)
-  ;; (setq eaf-browser-dark-mode nil
-        ;; eaf-browser-enable-autofill t
-        ;; eaf-browser-enable-adblock t)
-  ;; (defalias 'browse-web #'eaf-open-browser))
