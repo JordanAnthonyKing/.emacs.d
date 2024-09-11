@@ -2,6 +2,9 @@
 
 (require 'general)
 
+(use-package which-key
+  :hook (elpaca-after-init . which-key-mode))
+
 (general-create-definer my-leader-def
   :states '(normal visual motion)  ;; Apply to these evil states
   :keymaps 'override                ;; Ensure it overrides other keymaps
@@ -106,17 +109,17 @@ all hooks after it are ignored.")
            "[h"    #'outline-previous-visible-heading)
   (:states '(normal visual)
            "gc"    #'evilnc-comment-operator
-           "gx"    #'evil-exchange
-           "gd"    #'+lookup/definition
-           "gD"    #'+lookup/references
-           "gf"    #'+lookup/file
-           "gI"    #'+lookup/implementations)
+           ;; "gd"    #'+lookup/definition
+           ;; "gD"    #'+lookup/references
+           ;; "gf"    #'+lookup/file
+           ;; "gI"    #'+lookup/implementations
+           "gx"    #'evil-exchange)
   (:states 'visual
            "gR"    #'+eval:replace-region
            "<"     #'+evil/shift-left
            ">"     #'+evil/shift-right)
   (:states 'normal
-           "gR"    #'+eval/buffer)
+           "gR"    #'eval-buffer)
   :preface
   (setq evil-search-module 'evil-search ;; TODO: investigate isearch without regex
         evil-ex-visual-char-range t
@@ -163,7 +166,7 @@ all hooks after it are ignored.")
       (evil-ex-nohighlight)
       t))
 
-  (add-hook 'doom-escape-hook #'+evil-disable-ex-hightlights-h)
+  (add-hook 'doom-escape-hook #'+evil-disable-ex-highlights-h)
 
   (with-eval-after-load 'eldoc
     ;; Allow eldoc to trigger directly after changing modes
@@ -234,32 +237,32 @@ all hooks after it are ignored.")
   :config
   (evil-collection-init))
 
-(use-package evil-numbers
-  :ensure t)
-
-(use-package evil-easymotion
-  :ensure t
-  :after evil
-  :commands evilem-create evilem-default-keybindings)
-
-(use-package evil-exchange
-  :ensure t
-  :commands evil-exchange
-  :config
-  (defun +evil--escape-exchange-h ()
-    "Cancel `evil-exchange` if active when escape is triggered."
-    (when evil-exchange--overlays
-      (evil-exchange-cancel)
-      t))
-
-  (add-hook 'doom-escape-hook #'+evil--escape-exchange-h))
-
-(use-package evil-lion
-  :ensure t
-  :general
-  (:states '(normal visual)
-           "gl"   #'evil-lion-left
-           "gL"   #'evil-lion-right))
+;; (use-package evil-numbers
+  ;; :ensure t)
+;; 
+;; (use-package evil-easymotion
+  ;; :ensure t
+  ;; :after evil
+  ;; :commands evilem-create evilem-default-keybindings)
+;; 
+;; (use-package evil-exchange
+  ;; :ensure t
+  ;; :commands evil-exchange
+  ;; :config
+  ;; (defun +evil--escape-exchange-h ()
+    ;; "Cancel `evil-exchange` if active when escape is triggered."
+    ;; (when evil-exchange--overlays
+      ;; (evil-exchange-cancel)
+      ;; t))
+;; 
+  ;; (add-hook 'doom-escape-hook #'+evil--escape-exchange-h))
+;; 
+;; (use-package evil-lion
+  ;; :ensure t
+  ;; :general
+  ;; (:states '(normal visual)
+           ;; "gl"   #'evil-lion-left
+           ;; "gL"   #'evil-lion-right))
 
 (use-package evil-nerd-commenter
   :ensure t
@@ -293,28 +296,28 @@ all hooks after it are ignored.")
           ("\\[" . "\\]")
           ("<" . ">"))))
 
-(use-package evil-traces
-  :ensure t
-  :after evil-ex
-  :config
-  (require 'cl-lib) ; Ensure cl-lib is loaded
-
-  (cl-pushnew '(+evil:align . evil-traces-global) evil-traces-argument-type-alist :test #'equal)
-  (cl-pushnew '(+evil:align-right . evil-traces-global) evil-traces-argument-type-alist :test #'equal)
-  (cl-pushnew '(+multiple-cursors:evil-mc . evil-traces-substitute) evil-traces-argument-type-alist :test #'equal)
-
-  (evil-traces-mode))
-
-(use-package evil-visualstar
-  :ensure t
-  :after evil
-  :commands (evil-visualstar/begin-search
-             evil-visualstar/begin-search-forward
-             evil-visualstar/begin-search-backward)
-  :init
-  (evil-define-key* 'visual 'global
-    "*" #'evil-visualstar/begin-search-forward
-    "#" #'evil-visualstar/begin-search-backward))
+;; (use-package evil-traces
+  ;; :ensure t
+  ;; :after evil-ex
+  ;; :config
+  ;; (require 'cl-lib) ; Ensure cl-lib is loaded
+;; 
+  ;; (cl-pushnew '(+evil:align . evil-traces-global) evil-traces-argument-type-alist :test #'equal)
+  ;; (cl-pushnew '(+evil:align-right . evil-traces-global) evil-traces-argument-type-alist :test #'equal)
+  ;; (cl-pushnew '(+multiple-cursors:evil-mc . evil-traces-substitute) evil-traces-argument-type-alist :test #'equal)
+;; 
+  ;; (evil-traces-mode))
+;; 
+;; (use-package evil-visualstar
+  ;; :ensure t
+  ;; :after evil
+  ;; :commands (evil-visualstar/begin-search
+             ;; evil-visualstar/begin-search-forward
+             ;; evil-visualstar/begin-search-backward)
+  ;; :init
+  ;; (evil-define-key* 'visual 'global
+    ;; "*" #'evil-visualstar/begin-search-forward
+    ;; "#" #'evil-visualstar/begin-search-backward))
 
 
 (use-package evil-textobj-tree-sitter
