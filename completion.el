@@ -217,6 +217,13 @@
             "C-x C-d" #'consult-dir
             "C-x C-j" #'consult-dir-jump-file))
 
+(use-package consult-xref
+  :ensure nil
+  :defer t
+  :init
+  (setq xref-show-xrefs-function       #'consult-xref
+        xref-show-definitions-function #'consult-xref))
+
 ;;;###autoload
 (defun +vertico/embark-magit-status (file)
   "Run `magit-status` on repo containing the embark target."
@@ -313,96 +320,5 @@ Supports exporting consult-grep to wgrep, file to wdeired, and consult-location 
   :ensure t
   :commands wgrep-change-to-wgrep-mode
   :config (setq wgrep-auto-save-buffer t))
-
-(use-package which-key
-  :hook (elpaca-after-init . which-key-mode))
-
-;;; Corfu
-;; TODO: Bindings
-(use-package corfu
-  :ensure t
-  :defer t
-  :general
-  (:keymaps 'corfu-mode-map
-            "C-SPC" #'completion-at-point)
-  (:keymaps 'corfu-map
-            "C-SPC"    #'corfu-insert-separator
-            "C-k"      #'corfu-previous
-            "C-j"      #'corfu-next
-            "TAB"      #'corfu-next
-            "RET"      nil
-            [remap meow-insert-exit] #'corfu-quit)
-  (:keymaps 'corfu-popupinfo-map
-            "C-h"      #'corfu-popupinfo-toggle
-            "C-S-k"    #'corfu-popupinfo-scroll-down
-            "C-S-j"    #'corfu-popupinfo-scroll-up)
-  :hook ((prog-mode . corfu-mode)
-         (shell-mode . corfu-mode)
-         (eshell-mode . corfu-mode))
-  :custom
-  (read-extended-command-predicate #'command-completion-default-include-p)
-  (text-mode-ispell-word-completion nil)
-  (tab-always-indent 'complete)
-  :config
-  (setq corfu-auto t
-        corfu-auto-delay 0.18
-        corfu-auto-prefix 1
-        corfu-cycle t
-        corfu-preselect 'prompt
-        corfu-count 16
-        corfu-max-width 120
-        corfu-quit-at-boundary 'separator
-        corfu-quit-no-match corfu-quit-at-boundary
-        tab-always-indent 'complete)
-
-  ;; Enable corfu-history to maintain completion history
-  (corfu-history-mode +1)
-  (with-eval-after-load 'savehist
-    (add-to-list 'savehist-additional-variables 'corfu-history))
-
-  ;; Enable popup info for detailed information on completion
-  (corfu-popupinfo-mode +1)
-  (setq corfu-popupinfo-delay '(0.5 . 1.0)))
-
-(use-package cape
-  :ensure t
-  :defer t
-  :commands (cape-dabbrev cape-file cape-elisp-block)
-  :init
-  ;; Enable Dabbrev completion globally
-  (setq cape-dabbrev-check-other-buffers t)
-
-  (defvar my-dabbrev-ignored-buffer-modes '(pdf-view-mode doc-view-mode tags-table-mode)
-    "List of modes to ignore when using dabbrev.")
-
-  (defun +dabbrev-friend-buffer-p (other-buffer)
-    "Check if OTHER-BUFFER should be considered for dabbrev completion."
-    (not (memq (buffer-local-value 'major-mode other-buffer) my-dabbrev-ignored-buffer-modes)))
-
-  (setq dabbrev-friend-buffer-function #'+dabbrev-friend-buffer-p)
-  :general
-  (:keymaps 'corfu-map
-            "C-M-/"  #'cape-dabbrev
-            "C-M-]"  #'cape-file
-            "C-c p"  #'cape-file
-            "C-M-i"  #'cape-symbol))
-
-(use-package corfu-terminal
-  :ensure t
-  :defer t
-  :config
-  (unless (display-graphic-p)
-    (corfu-terminal-mode +1)))
-
-(use-package kind-icon
-  :ensure t
-  :defer t
-  :after corfu
-  :config
-  (setq kind-icon-default-face 'corfu-default)  ;; Use corfu's default face for icons
-  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter)
-  (setq kind-icon-use-icons nil))  ;; Disable icons and use text instead
-
-(provide 'completion)
 
 ;;; completion.el ends here
