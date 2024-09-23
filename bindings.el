@@ -1,181 +1,342 @@
 ;;; bindings.el --- DESCRIPTION -*- no-byte-compile: t; lexical-binding: t; -*-
 
-;; TODO: Consultify various and load after completion
-(defvar-keymap my-buffer-prefix-keymap
-  :doc "buffers"
-  "b" #'consult-buffer
-  "k" #'kill-this-buffer
-  "d" #'kill-this-buffer
-  "p" #'previous-buffer
-  "n" #'next-buffer
-  "B" #'consult-buffer
-  "r" #'rename-buffer
-  "R" #'revert-buffer)
+(setq w32-lwindow-modifier 'super
+      w32-rwindow-modifier 'super)
 
-(defvar-keymap my-file-prefix-keymap
-  :doc "Files"
-  "f" #'find-file
-  "d" #'dired-jump
-  "r" #'consult-recentf)
+;; HACK: Emacs can't distinguish C-i from TAB, or C-m from RET, in either GUI or
+;;   TTY frames.  This is a byproduct of its history with the terminal, which
+;;   can't distinguish them either, however, Emacs has separate input events for
+;;   many contentious keys like TAB and RET (like [tab] and [return], aka
+;;   "<tab>" and "<return>"), which are only triggered in GUI frames, so here, I
+;;   create one for C-i. Won't work in TTY frames, though. Doom's :os tty module
+;;   has a workaround for that though.
+(pcase-dolist (`(,key ,fallback . ,events)
+               '(([C-i] [?\C-i] tab kp-tab)
+                 ([C-m] [?\C-m] return kp-return)))
+  (define-key
+   input-decode-map fallback
+   (lambda ()
+     (interactive)
+     (let ((keys (this-single-command-raw-keys)))
+       (if (and (display-graphic-p)
+                (not (cl-loop for event in events
+                              if (cl-position event keys)
+                              return t))
+                ;; Use FALLBACK if nothing is bound to KEY, otherwise we've
+                ;; broken all pre-existing FALLBACK keybinds.
+                (key-binding
+                 (vconcat (if (= 0 (length keys)) [] (cl-subseq keys 0 -1))
+                          key) nil t))
+           (setq unread-command-events (listify-key-sequence (vector key)))
+         (setq unread-command-events (listify-key-sequence (vector fallback))))))))
 
-(defvar-keymap my-project-prefix-keymap
-  :doc "Projects"
-  "f" #'project-find-file
-  "!" #'project-shell-command
-  "&" #'project-async-shell-command
-  "c" #'project-compile
-  "r" #'project-recompile
-  "d" #'project-find-dir
-  "D" #'project-dired
-  "p" #'project-switch-project
-  "o" #'find-sibling-file
-  "K" #'project-kill-buffers
-  "Q" #'project-kill-buffers)
+;;; Universal, non-nuclear escape
 
-(defvar-keymap my-window-prefix-keymap
-  :doc "Windows"
-  "h" #'windmove-left
-  "j" #'windmove-down
-  "k" #'windmove-up
-  "l" #'windmove-right
-  "H" #'windmove-swap-states-left
-  "J" #'windmove-swap-states-down
-  "K" #'windmove-swap-states-up
-  "L" #'windmove-swap-states-right
-  "d" #'delete-window
-  "D" #'delete-other-windows
-  "s" #'split-window-vertically
-  "v" #'split-window-horizontally)
+;; `keyboard-quit' is too much of a nuclear option. I wanted an ESC/C-g to
+;; do-what-I-mean. It serves four purposes (in order):
+;;
+;; 1. Quit active states; e.g. highlights, searches, snippets, iedit,
+;;    multiple-cursors, recording macros, etc.
+;; 2. Close popup windows remotely (if it is allowed to)
+;; 3. Refresh buffer indicators, like diff-hl and flycheck
+;; 4. Or fall back to `keyboard-quit'
+;;
+;; And it should do these things incrementally, rather than all at once. And it
+;; shouldn't interfere with recording macros or the minibuffer. This may require
+;; you press ESC/C-g two or three times on some occasions to reach
+;; `keyboard-quit', but this is much more intuitive.
 
-;; TODO: Needs to not move beyond the newline char
-(defun my-meow-append (arg)
-  "Move cursor right by one character if no active selection, then call `meow-append`.
-If there is an active selection, just call `meow-append`."
-  (interactive "p")
-  (if (use-region-p)
-      (meow-append)
-    (progn
-      (forward-char 1)
-      (meow-append))))
+(defvar doom-escape-hook nil
+  "A hook run when C-g is pressed (or ESC in normal mode, for evil users).
 
-(defun meow-setup ()
-  (setq meow-cheatsheet-layout meow-cheatsheet-layout-qwerty)
+More specifically, when `doom/escape' is pressed. If any hook returns non-nil,
+all hooks after it are ignored.")
 
-  (meow-motion-overwrite-define-key
-   '("j" . meow-next)
-   '("k" . meow-prev)
-   '("<escape>" . ignore))
-  
-  (meow-leader-define-key
-   ;; SPC j/k will run the original command in MOTION state.
-   '("SPC" . execute-extended-command)
-   '(";" . eval-expression)
-   '("h" . help-map)
-   '("j" . "H-j")
-   '("k" . "H-k")
-   '("." . vertico-repeat) ; TODO Resume last search
-   (cons "b" my-buffer-prefix-keymap)
-   (cons "f" my-file-prefix-keymap)
-   (cons "p" my-project-prefix-keymap)
-   (cons "w" my-window-prefix-keymap)
-   ;; Use SPC (0-9) for digit arguments.
-   '("1" . meow-digit-argument)
-   '("2" . meow-digit-argument)
-   '("3" . meow-digit-argument)
-   '("4" . meow-digit-argument)
-   '("5" . meow-digit-argument)
-   '("6" . meow-digit-argument)
-   '("7" . meow-digit-argument)
-   '("8" . meow-digit-argument)
-   '("9" . meow-digit-argument)
-   '("0" . meow-digit-argument)
-   ;; '("/" . meow-keypad-describe-key)
-   '("?" . meow-cheatsheet))
+(defun doom/escape (&optional interactive)
+  "Run `doom-escape-hook'."
+  (interactive (list 'interactive))
+  (let ((inhibit-quit t))
+    (cond ((minibuffer-window-active-p (minibuffer-window))
+           ;; quit the minibuffer if open.
+           (when interactive
+             (setq this-command 'abort-recursive-edit))
+           (abort-recursive-edit))
+          ;; Run all escape hooks. If any returns non-nil, then stop there.
+          ((run-hook-with-args-until-success 'doom-escape-hook))
+          ;; don't abort macros
+          ((or defining-kbd-macro executing-kbd-macro) nil)
+          ;; Back to the default
+          ((unwind-protect (keyboard-quit)
+             (when interactive
+               (setq this-command 'keyboard-quit)))))))
 
-  
-  (meow-normal-define-key
-   '("0" . meow-expand-0)
-   '("9" . meow-expand-9)
-   '("8" . meow-expand-8)
-   '("7" . meow-expand-7)
-   '("6" . meow-expand-6)
-   '("5" . meow-expand-5)
-   '("4" . meow-expand-4)
-   '("3" . meow-expand-3)
-   '("2" . meow-expand-2)
-   '("1" . meow-expand-1)
-   '("-" . negative-argument)
-   '(";" . meow-reverse)
-   '(": w RET" . save-buffer)
-   '(": q RET" . kill-buffer)
-   '("," . meow-inner-of-thing)
-   '("." . meow-bounds-of-thing)
-   '("[" . meow-beginning-of-thing)
-   '("]" . meow-end-of-thing)
-   '("a" . my-meow-append)
-   '("A" . meow-open-below)
-   '("b" . meow-back-word)
-   '("B" . meow-back-symbol)
-   '("c" . meow-change)
-   '("d" . meow-kill) ; Swap with backspace
-   '("D" . meow-backward-delete)
-   '("e" . meow-next-word)
-   '("E" . meow-next-symbol)
-   '("f" . meow-till) ; I'd rather be before the char not after
-   ;; Need an F --- actually swap with t
-   ; '("g" . meow-cancel-selection)
-   '("g g" . meow-cancel-selection)
-   '("G" . meow-grab)
-   '("h" . meow-left)
-   '("H" . meow-left-expand)
-   '("i" . meow-insert)
-   '("I" . meow-open-above)
-   '("j" . meow-next)
-   '("J" . meow-next-expand)
-   '("k" . meow-prev)
-   '("K" . meow-prev-expand)
-   '("l" . meow-right)
-   '("L" . meow-right-expand)
-   '("m" . (lambda (arg)
-             (interactive "p")
-             (meow-join (- arg)))) ;; This probably won't work for all cases because of how negative arg works
-   '("M" . meow-join)
-   '("n" . meow-search)
-   '("N" . (lambda (arg)
-             (interactive "p")
-             (meow-search (- 1))))
-   '("o" . meow-block)
-   '("O" . meow-to-block)
-   '("p" . meow-yank)
-   '("q" . meow-quit)
-   '("Q" . meow-goto-line)
-   '("r" . meow-replace)
-   '("R" . meow-swap-grab)
-   '("s" . meow-kill) ; Have S go backwards, but I think I'd rather have all this on d and bind s to snipe
-   '("t" . meow-till) ; swap with f
-   '("u" . meow-undo)
-   '("U" . meow-undo-in-selection)
-   '("v" . meow-line)
-   '("w" . meow-mark-word)
-   '("W" . meow-mark-symbol) ; swap these
-   '("x" . meow-delete) ; Change to delete? No shift v so set this there
-   '("X" . meow-goto-line)
-   '("y" . meow-save) ; make a bit more vimmy
-   '("Y" . meow-sync-grab)
-   '("z" . meow-pop-selection)
-   '("'" . repeat)
-   '("~" . upcase-region)
-   '("/" . meow-visit)
-   '("<escape>" . meow-cancel-selection))) ; Cancel selection?
+(global-set-key [remap keyboard-quit] #'doom/escape)
 
+(with-eval-after-load 'eldoc
+  (eldoc-add-command 'doom/escape))
 
-(use-package meow
+(use-package which-key
+  :ensure nil
+  :hook (elpaca-after-init . which-key-mode)
+  :init
+  (setq which-key-sort-order #'which-key-key-order-alpha
+        which-key-sort-uppercase-first nil
+        which-key-add-column-padding 1
+        which-key-max-display-columns nil
+        which-key-min-display-lines 6
+        which-key-side-window-slot -10)
   :config
-  (setq meow-use-clipboard t)
-  (meow-setup)
-  (meow-global-mode +1))
+  (which-key-setup-side-window-bottom))
 
-(use-package avy)
+(require 'general)
 
+(general-def (evil-ex-completion-map evil-ex-search-keymap)
+  "C-a" #'evil-beginning-of-line
+  "C-b" #'evil-backward-char
+  "C-f" #'evil-forward-char)
 
+(general-define-key
+ :states '(global insert)
+ :keymaps '(evil-ex-completion-map evil-ex-search-keymap)
+ "C-j" #'next-complete-history-element
+ "C-k" #'previous-complete-history-element)
 
+(general-def minibuffer-mode-map
+  [escape] #'abort-recursive-edit
+  "C-a"    #'move-beginning-of-line
+  "C-r"    #'evil-paste-from-register
+  "C-u"    #'evil-delete-back-to-indentation
+  "C-v"    #'yank
+  "C-w"    #'evil-delete-backward-word
+  "C-z"    #'undo
+  "C-j"    #'next-line
+  "C-k"    #'previous-line
+  "C-S-j"  #'scroll-up-command
+  "C-S-k"  #'scroll-down-command)
+
+(general-define-key
+ :states 'insert
+ :keymaps 'minibuffer-mode-map
+ "C-j" #'next-line
+ "C-k" #'previous-line)
+
+(general-def read-expression-map
+  "C-j" #'next-line-or-history-element
+  "C-k" #'previous-line-or-history-element)
+
+(general-def 'normal
+  "C-="    #'text-scale-increase
+  "C--"    #'text-scale-decrease)
+
+(general-def evil-window-map
+  "d" #'evil-window-delete)
+
+;; (general-define-key
+
+(general-create-definer my-leader-def
+  :states '(normal visual motion)   ;; Apply to these evil states
+  :keymaps 'override                ;; Ensure it overrides other keymaps
+  :prefix "SPC")                    ;; Set "SPC" as the prefix key
+
+(my-leader-def
+  "SPC" #'execute-extended-command
+  ";" #'pp-eval-expression
+  "h" help-map
+  "." #'vertico-repeat
+  "w" 'evil-window-map
+  "u" #'universal-argument
+
+  "b" '(:ignore t :which-key "buffers")
+  "b b" #'consult-buffer
+  "b B" #'consult-buffer-other-window
+  "b k" #'kill-current-buffer
+  "b d" #'kill-current-buffer
+  "b p" #'previous-buffer
+  "b n" #'next-buffer
+  "b [" #'previous-buffer
+  "b ]" #'next-buffer
+  "b B" #'consult-buffer
+  "b r" #'rename-buffer
+  "b R" #'revert-buffer
+  "b i" #'ibuffer
+  "b c" #'clone-indirect-buffer
+  "b C" #'clone-indirect-buffer-other-window
+  "b l" #'evil-switch-to-windows-last-buffer
+  "b m" #'bookmark-set
+  "b M" #'bookmark-delete
+  "b N" #'evil-buffer-new
+  "b R" #'revert-buffer
+  "b s" #'save-buffer
+  "b S" #'evil-write-all
+  "b z" #'bury-buffer
+  "b Z" #'unbury-buffer
+  "b /" #'consult-line
+
+  "c" '(:ignore t :which-key "code")
+  "c a" #'lsp-execute-code-action
+  "c o" #'lsp-organize-imports
+  "c l" 'lsp-map
+  "c r" #'lsp-rename
+  "c s" #'consult-lsp-symbols
+  "c c" #'compile
+  "c C" #'recompile
+  "c d" #'lsp-find-definition
+  "c D" #'lsp-find-references
+  ;; TODO: Move to eval probably
+  "c e" #'eval-region
+  "c E" #'eval-buffer
+  "c f" #'lsp-format-region
+  "c F" #'lsp-format-buffer
+  "c w" #'delete-trailing-whitespace
+  "c e" #'consult-lsp-diagnostics
+  "c i" #'indent-region
+
+  "f" '(:ignore t :which-key "files")
+  "f f" #'find-file
+  "f F" #'find-file-other-window
+  ;; "f d" #'dired-jump
+  "f d" #'dirvish
+  "f r" #'consult-recentf
+  "f c" #'editorconfig-find-current-editorconfig
+  "f D" #'delete-file
+  "f l" #'consult-locate
+  "f r" #'recentf-open-files
+  "f R" #'rename-file
+  "f s" #'save-buffer
+  "f S" #'write-file
+
+  "g" '(:ignore t :which-key "magit")
+  "g R" #'vc-revert
+  ;; "g t" #'git-timemachine-toggle
+
+  ;; TODO: hunks
+  "g /"   #'magit-dispatch
+  "g ."   #'magit-file-dispatch
+  "g '"   #'forge-dispatch
+  "g b"   #'magit-branch-checkout
+  "g g"   #'magit-status
+  "g G"   #'magit-status-here
+  "g D"   #'magit-file-delete
+  "g B"   #'magit-blame-addition
+  "g C"   #'magit-clone
+  "g F"   #'magit-fetch
+  "g L"   #'magit-log-buffer-file
+  "g S"   #'magit-stage-buffer-file
+  "g U"   #'magit-unstage-buffer-file
+
+  "g f" '(:ignore t :which-key "find")
+  "g f f"   #'magit-find-file
+  "g f g"   #'magit-find-git-config-file
+  "g f c"   #'magit-show-commit
+  "g f i"   #'forge-visit-issue
+  "g f p"   #'forge-visit-pullreq
+
+  "g o" '(:ignore t :which-key "open in browser")
+  ;; "g o o"   #'+vc/browse-at-remote
+  ;; "g o h"   #'+vc/browse-at-remote-homepage
+  "g o r"   #'forge-browse-remote
+  "g o c"   #'forge-browse-commit
+  "g o i"   #'forge-browse-issue
+  "g o p"   #'forge-browse-pullreq
+  "g o I"   #'forge-browse-issues
+  "g o P"   #'forge-browse-pullreqs
+
+  "g l" '(:ignore t :which-key "list")
+  ;; (:when (modulep! :tools gist)
+  ;; :desc "List gists"              "g"   #'+gist:list)
+  "g l r"   #'magit-list-repositories
+  "g l s"   #'magit-list-submodules
+  "g l i"   #'forge-list-issues
+  "g l p"   #'forge-list-pullreqs
+  "g l n"   #'forge-list-notifications
+
+  "g c" '(:ignore t :which-key "create")
+  "g c r"   #'magit-init
+  "g c R"   #'magit-clone
+  "g c c"   #'magit-commit-create
+  "g c f"   #'magit-commit-fixup
+  "g c b"   #'magit-branch-and-checkout
+  "g c i"   #'forge-create-issue
+  "g c p"   #'forge-create-pullreq
+
+  "i" '(:ignore t :which-key "insert")
+  "i e" #'emoji-search
+  "i p" (lambda () (evil-ex "R!echo "))
+  "i r" #'evil-show-registers
+  ;; TODO: Snippets
+  ;; "i s" #'some-snippet-command
+  "i u" #'insert-char
+  "i y" #'yank-pop
+
+  "o" '(:ignore t :which-key "open")
+  "o b" #'browse-url-of-file
+  "o f" #'make-frame
+  "o F" #'select-frame-by-name
+  "o d" #'dirvish
+  "o -" #'dired-jump
+  "o p" #'dirvish-side
+  "o t" #'eat
+
+  "p" '(:ignore t :which-key "projects")
+  "p f" #'project-find-file
+  "p !" #'project-shell-command
+  "p &" #'project-async-shell-command
+  "p c" #'project-compile
+  "p r" #'project-recompile
+  "p d" #'project-find-dir
+  "p D" #'project-dired
+  "p p" #'project-switch-project
+  "p o" #'find-sibling-file
+  "p b" #'consult-project-buffer
+  "p s" #'consult-ripgrep
+  "p t" #'eat-project
+  "p T" #'eat-project-other-window
+
+  "q" '(:ignore t :which-key "quit/session")
+  ;; "d" #'+default/restart-server
+  "q f" #'delete-frame
+  ;; "F" #'doom/kill-all-buffers
+  "q K" #'save-buffers-kill-emacs
+  "q q" #'save-buffers-kill-terminal
+  "q Q" #'evil-quit-all-with-error-code
+
+  "s" '(:ignore t :which-key "search")
+  "s b" #'consult-line
+  "s B" #'consult-line-multi
+  "s d" #'consult-ripgrep
+  "s f" #'consult-locate
+  "s i" #'consult-imenu
+  "s I" #'consult-imenu-multi
+  "s l" #'ffap-menu
+  "s j" #'evil-show-jumps
+  "s m" #'bookmark-jump
+  "s r" #'evil-show-marks
+  "s u" #'vundo
+  "s p" #'consult-ripgrep
+
+  "t" '(:ignore t :which-key "toggle")
+  "t c" #'global-display-fill-column-indicator-mode
+  "t d" #'diff-hl-mode
+  "t f" #'flycheck-mode
+  "t F" #'toggle-frame-fullscreen
+  ;; "t g" #'evil-goggles-mode
+  "t i" #'indent-bars-mode
+  "t v" #'visible-mode
+  "t w" #'visual-line-mode
+
+  ;; "w" '(:ignore t :which-key "windows")
+  ;; "w h" #'windmove-left
+  ;; "w j" #'windmove-down
+  ;; "w k" #'windmove-up
+  ;; "w l" #'windmove-right
+  ;; "w H" #'windmove-swap-states-left
+  ;; "w J" #'windmove-swap-states-down
+  ;; "w K" #'windmove-swap-states-up
+  ;; "w L" #'windmove-swap-states-right
+  ;; "w d" #'delete-window
+  ;; "w D" #'delete-other-windows
+  ;; "w s" #'split-window-vertically
+  ;; "w v" #'split-window-horizontally
+
+  "TAB" '(:ignore t :which-key "workspaces")
+  "TAB TAB" #'tab-bar-echo-area-display-tab-names)

@@ -13,3 +13,7 @@
 ;; (setq window-divider-default-right-width 10)
 ;; (setq window-divider-default-bottom-width 10)
 (setq widget-image-enable nil)
+
+(setq use-package-compute-statistics t) 
+
+

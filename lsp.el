@@ -1,198 +1,226 @@
 ;;; lsp.el --- Configuration for language servers -*- no-byte-compile: t; lexical-binding: t; -*-
 
-(add-to-list 'load-path (expand-file-name "lisp/" minimal-emacs-user-directory))
-(require 'angular-ts-mode)
+;; (require 'treesit)
+;;
+;; (define-derived-mode angular-ts-mode html-ts-mode "Angular"
+;;   "Major mode for editing Angular flavoured HTML, powered by tree-sitter."
+;;   :group 'angular
+;;   (add-to-list 'find-sibling-rules
+;;                '("\\(.+\\)\\.component\\.html\\'" "\\1.component.ts"))
+;;   (add-to-list 'find-sibling-rules
+;;                '("\\(.+\\)\\.container\\.html\\'" "\\1.container.ts")))
+;;
+;; (when (treesit-ready-p 'angular)
+;;   (add-to-list 'auto-mode-alist '("\\.component\\.html\\'" . angular-ts-mode))
+;;   (add-to-list 'auto-mode-alist '("\\.container\\.html\\'" . angular-ts-mode)))
+;;
+;; (provide 'angular-ts-mode)
 
-(add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-ts-mode))
-
-(defun ts-mode-add-sibling-rule ()
-  "Add sibling rule for TypeScript files to match with Angular HTML files."
-  (add-to-list 'find-sibling-rules
-               '("\\(.+\\)\\.component\\.ts\\'" "\\1.component.html")))
-
-(add-hook 'typescript-ts-mode-hook 'ts-mode-add-sibling-rule)
-(add-hook 'typescript-ts-mode-hook (lambda () (setq tab-width 2)))
-
-(defun angular-ts-mode-add-sibling-rule ()
-  "Add sibling rule for Angular HTML files to match with TypeScript files."
-  (add-to-list 'find-sibling-rules
-               '("\\(.+\\)\\.component\\.html\\'" "\\1.component.ts"))
-  (add-to-list 'find-sibling-rules
-               '("\\(.+\\)\\.container\\.html\\'" "\\1.component.ts")))
-
-(add-hook 'angular-ts-mode-hook 'angular-ts-mode-add-sibling-rule)
-(add-hook 'angular-ts-mode-hook (lambda () (setq tab-width 2)))
-
-;; TODO: Add this to relevant hooks
-(setq tab-width 2)
-
-(defvar +lsp--default-read-process-output-max nil)
-(defvar +lsp--default-gcmh-high-cons-threshold nil)
-(defvar +lsp--optimization-init-p nil)
-
-(define-minor-mode +lsp-optimization-mode
-  "Deploys universal GC and IPC optimizations for `lsp-mode' and `eglot'."
-  :global t
-  :init-value nil
-  (if (not +lsp-optimization-mode)
-      (setq-default read-process-output-max +lsp--default-read-process-output-max
-                    gcmh-high-cons-threshold +lsp--default-gcmh-high-cons-threshold
-                    +lsp--optimization-init-p nil)
-    ;; Only apply these settings once!
-    (unless +lsp--optimization-init-p
-      (setq +lsp--default-read-process-output-max (default-value 'read-process-output-max)
-            +lsp--default-gcmh-high-cons-threshold (default-value 'gcmh-high-cons-threshold))
-      (setq-default read-process-output-max (* 1024 1024))
-      (setq-default gcmh-high-cons-threshold (* 2 +lsp--default-gcmh-high-cons-threshold))
-      (gcmh-set-high-threshold)
-      (setq +lsp--optimization-init-p t))))
-
-(use-package eglot
+;; TODO: This not activating right
+(use-package typescript-ts-mode
   :ensure nil
-  :commands (eglot eglot-ensure)
-  :hook (eglot-managed-mode . +lsp-optimization-mode)
-  :hook (typescript-ts-mode . eglot-ensure)
-  :hook (angular-ts-mode . eglot-ensure)
   :defer t
-  :general
-  (:states '(normal visual)
-           :keymaps 'eglot-mode-map
-           "gd"    #'+lookup/definition
-           "gD"    #'+lookup/references)
-  :init
-  (setq eglot-sync-connect 1
-        eglot-autoshutdown t
-        eglot-auto-display-help-buffer nil)
-
+  :mode "\\.ts\\'"
   :config
-  ;; (set-popup-rule! "^\\*eglot-help" :size 0.15 :quit t :select t)
-  ;; (set-lookup-handlers! 'eglot--managed-mode
-  ;; :definition      #'xref-find-definitions
-  ;; :references      #'xref-find-references
-  ;; :implementations #'eglot-find-implementation
-  ;; :type-definition #'eglot-find-typeDefinition
-  ;; :documentation   #'+eglot-lookup-documentation)
+  (add-to-list 'find-sibling-rules
+               '("\\(.+\\)\\.component\\.ts\\'" "\\1.component.html"))
+  (add-to-list 'find-sibling-rules
+               '("\\(.+\\)\\.container\\.ts\\'" "\\1.container.html"))
+  (add-to-list 'find-sibling-rules
+               '("\\(.+\\)\\.container\\.spec\\.ts\\'" "\\1.container.ts")))
 
-  (add-to-list 'eglot-server-programs
-               '(angular-ts-mode "ngserver"
-                                 "--stdio"
-                                 "--tsProbeLocations"
-                                 "c:/Program Files/nodejs/node_modules"
-                                 "--ngProbeLocations"
-                                 "c:/Program Files/nodejs/node_modules/@angular/language-server/node_modules/"))
+;; (use-package treesit-langs
+;;   :ensure (treesit-langs
+;;            :host github
+;;            :repo "JordanAnthonyKing/treesit-langs"
+;;            :files ("treesit-*.el" "queries"))
+;;   :defer t
+;;   :hook ((prog-mode angular-ts-mode) . (lambda ()
+;;                                          ;; some mode is better be highlighted not using tree-sitter
+;;                                          (unless (member major-mode '(sh-mode))
+;;                                            (ignore-errors (treesit-hl-toggle 'on)))))
+;;   :custom
+;;   (treesit-langs-git-dir nil)
+;;   (treesit-langs-grammar-dir (expand-file-name "tree-sitter" user-emacs-directory))
+;;   :config
+;;   (add-to-list 'treesit-extra-load-path treesit-langs-grammar-dir))
 
-  (cl-callf plist-put eglot-events-buffer-config :size 0))
-
-(use-package flymake
-  :hook (prog-mode . flymake-mode)
-  :hook (sgml-mode . flymake-mode))
-
-;; (use-package flymake-popon
-  ;; :hook (flymake-mode . flymake-popon-mode)
-  ;; :config
-  ;; (setq flymake-popon-method 'posframe))
-
-(use-package dumb-jump
-  :commands dumb-jump-result-follow
-  :config
-  (setq dumb-jump-prefer-search 'rg
-        dumb-jump-aggressive nil
-        dumb-jump-selector 'completing-read)
-  (setq dumb-jump-language-file-exts
-        (append dumb-jump-language-file-exts
-                '((:language "typescript" :ext "html" :agtype "html" :rgtype "html"))))
-
-  (setq dumb-jump-language-file-exts
-        (append dumb-jump-language-file-exts
-                '((:language "angular" :ext "html" :agtype "html" :rgtype "html")
-                  (:language "angular" :ext "ts" :agtype "ts" :rgtype "ts")))))
-
+;; (use-package add-node-modules-path
+;;   :ensure t
+;;   :defer t
+;;   :hook ((typescript-ts-mode . add-node-modules-path)
+;;          (angular-ts-mode . add-node-modules-path)))
+;;
 ;; (use-package eslintd-fix
-  ;; :ensure t
-  ;; :hook (typescript-ts-mode . eslintd-fix-mode)
-  ;; ;; :config
-  ;; ;; (setq eslintd-fix-executable "c:/Program Files/nodejs/eslint_d")
-  ;; )
-  
-(use-package consult-eglot
+;;   :ensure t
+;;   :defer t
+;;   :hook (typescript-ts-mode . eslintd-fix-mode))
+
+(use-package lsp-mode
   :ensure t
   :defer t
-  :after eglot
+  :hook ((typescript-ts-mode . lsp)
+         (angular-ts-mode . lsp)
+         (lsp-mode . lsp-enable-which-key-integration))
+  :commands lsp
+  :init
+  (setq lsp-headerline-breadcrumb-enable nil
+        lsp-enable-on-type-formatting nil
+        lsp-modeline-code-actions-enable nil
+        lsp-modeline-diagnostics-enable nil
+        lsp-keep-workspace-alive nil
+        lsp-enable-folding nil
+        lsp-enable-text-document-color nil
+        lsp-enable-snippet nil
+        lsp-keymap-prefix nil
+        lsp-file-watch-threshold 9001
+        lsp-typescript-indent-level 2
+        lsp-auto-execute-action nil
+        lsp-signature-function 'lsp-signature-posframe
+        lsp-completion-provider :none)
+  :config
+  (defun +lsp-signature-stop-maybe-h ()
+    "Close the displayed `lsp-signature'."
+    (when lsp-signature-mode
+      (lsp-signature-stop)
+      t))
+
+  (add-hook 'doom-escape-hook #'+lsp-signature-stop-maybe-h))
+
+(use-package consult-lsp
+  :ensure t
+  :defer t
   :general
-  ([remap xref-find-apropos] #'consult-eglot-symbols))
+  (:keymaps 'lsp-mode-map
+            [remap xref-find-apropos] #'consult-lsp-symbols)
+  :commands consult-lsp-symbols)
 
-;;;###autoload
-(defun my-corfu-move-to-minibuffer ()
-  "Move the current list of candidates to the minibuffer using `vertico` and `consult`."
-  (interactive)
-  (pcase completion-in-region--data
-    (`(,beg ,end ,table ,pred ,extras)
-     (let ((completion-extra-properties extras)
-           completion-cycle-threshold completion-cycling)
-       (consult-completion-in-region beg end table pred)))))
+(use-package flycheck
+  :ensure t
+  :defer t
+  :hook ((typescript-ts-mode . flycheck-mode)
+         (angular-ts-mode . flycheck-mode))
+  :config
+  (delq 'new-line flycheck-check-syntax-automatically)
+  (setq flycheck-idle-change-delay 1.0)
+  (setq flycheck-buffer-switch-check-intermediate-buffers t)
+  (setq flycheck-display-errors-delay 0.25)
 
-;;;###autoload
-(defun my-corfu-smart-sep-toggle-escape ()
-  "Insert `corfu-separator` or toggle escape if it's already there."
-  (interactive)
-  (cond ((and (char-equal (char-before) corfu-separator)
-              (char-equal (char-before (1- (point))) ?\\))
-         (save-excursion (delete-char -2)))
-        ((char-equal (char-before) corfu-separator)
-         (save-excursion
-           (backward-char 1)
-           (insert-char ?\\)))
-        (t (call-interactively #'corfu-insert-separator))))
+  (defun +syntax-check-buffer-h ()
+    "Flycheck buffer on ESC in normal mode."
+    (when flycheck-mode
+      (ignore-errors (flycheck-buffer))
+      nil))
 
-;;;###autoload
-(defun +corfu/dabbrev-this-buffer ()
-  "Like `cape-dabbrev', but only scans current buffer."
-  (interactive)
-  (require 'cape)
-  (let ((cape-dabbrev-check-other-buffers nil))
-    (cape-dabbrev t)))
+  (add-hook 'doom-escape-hook #'+syntax-check-buffer-h))
 
-;;; Corfu
-;; TODO: Bindings
+(use-package consult-flycheck
+  :ensure t
+  :defer t)
+
+(use-package flycheck-popup-tip
+  :ensure t
+  :defer t
+  :hook (flycheck-mode . flycheck-popup-tip-mode)
+  :commands flycheck-popup-tip-show-popup flycheck-popup-tip-delete-popup
+  :config
+  (setq flycheck-popup-tip-error-prefix "[!] ")
+
+  ;; HACK: Only display the flycheck popup if we're in normal mode (for evil
+  ;;   users) or if no selection or completion is active. This popup can
+  ;;   interfere with the active evil mode, clear active regions, and other
+  ;;   funny business (see #7242).
+  (defun +syntax--disable-flycheck-popup-tip-maybe-a (&rest _)
+    (if (and (bound-and-true-p evil-local-mode)
+             (not (evil-emacs-state-p)))
+        (evil-normal-state-p)
+      (and (not (region-active-p))
+           (not (ignore-errors (>= corfu--index 0))))))
+
+  (advice-add #'flycheck-popup-tip-show-popup :before-while #'+syntax--disable-flycheck-popup-tip-maybe-a))
+
+(use-package flycheck-posframe
+  :ensure t
+  :defer t
+  :after evil
+  :hook (flycheck-mode . flycheck-posframe-mode)
+  :config
+  (setq flycheck-posframe-warning-prefix "[?] "
+        flycheck-posframe-info-prefix "[i] "
+        flycheck-posframe-error-prefix "[!] ")
+
+  ;; HACK: Hide the flycheck posframe immediately on the next keypress/user
+  ;;   action, otherwise it lingers until the next time the user is idle.
+  (defun +syntax--flycheck-posframe-hide-h ()
+    (unless (flycheck-posframe-check-position)
+      (posframe-hide flycheck-posframe-buffer))
+    (remove-hook 'post-command-hook #'+syntax--flycheck-posframe-hide-h))
+
+  (defun +syntax-hide-posframe-on-next-command-a (fn &rest args)
+    (letf! ((defun posframe-show (&rest args)
+              (add-hook 'post-command-hook #'+syntax--flycheck-posframe-hide-h)
+              (apply posframe-show args)))
+           (apply fn args)))
+
+  (advice-add #'flycheck-posframe-show-posframe :around #'+syntax-hide-posframe-on-next-command-a)
+
+  (add-hook 'flycheck-posframe-inhibit-functions #'evil-replace-state-p)
+  (add-hook 'flycheck-posframe-inhibit-functions #'evil-insert-state-p))
+
+;; (use-package dumb-jump
+;; :commands dumb-jump-result-follow
+;; :config
+;; (setq dumb-jump-prefer-search 'rg
+;; dumb-jump-aggressive nil
+;; dumb-jump-selector 'completing-read)
+;; (setq dumb-jump-language-file-exts
+;; (append dumb-jump-language-file-exts
+;; '((:language "typescript" :ext "html" :agtype "html" :rgtype "html"))))
+;; 
+;; (setq dumb-jump-language-file-exts
+;; (append dumb-jump-language-file-exts
+;; '((:language "angular" :ext "html" :agtype "html" :rgtype "html")
+;; (:language "angular" :ext "ts" :agtype "ts" :rgtype "ts")))))
+
+;; TODO: After conflicting with hook?
 (use-package corfu
   :ensure t
   :defer t
+  :hook (elpaca-after-init . global-corfu-mode)
   :general
   (:keymaps 'corfu-mode-map
-            "C-SPC" #'completion-at-point)
+            :states  'insert
+            "C-@" #'completion-at-point
+            "C-SPC" #'completion-at-point
+            "C-n"   #'corfu-next
+            "C-p"   #'corfu-previous)
+  (:keymaps 'corfu-mode-map
+            :states  'normal
+            "C-SPC" (lambda () (progn (call-interactively #'evil-insert-state)
+                                      (call-interactively #'completion-at-point))))
   (:keymaps 'corfu-map
-            "C-SPC"    #'corfu-insert-separator
-            "C-k"      #'corfu-previous
-            "C-j"      #'corfu-next
-            "TAB"      #'corfu-next
-            "RET"      nil
-            [remap meow-insert-exit] #'corfu-quit)
-  (:keymaps 'corfu-popupinfo-map
-            "C-h"      #'corfu-popupinfo-toggle
-            "C-S-k"    #'corfu-popupinfo-scroll-down
-            "C-S-j"    #'corfu-popupinfo-scroll-up)
-  (:states 'insert
-:prefix "C-x"
-           "C-l"  #'cape-line
-           "C-k"  #'cape-keyword
-           "C-f"  #'cape-file
-           "C-]"  #'complete-tag
-           "s"    #'cape-dict
-           ;; "C-s"  #'yasnippet-capf
-           "C-o"  #'completion-at-point
-           "C-n"  #'cape-dabbrev
-           "C-p"  #'+corfu/dabbrev-this-buffer)
-  :hook ((prog-mode . corfu-mode)
-         (sgml-mode . corfu-mode)
-         (shell-mode . corfu-mode)
-         (eshell-mode . corfu-mode))
+            "C-k" #'corfu-previous
+            "C-j" #'corfu-next
+            "C-u" (lambda () (progn (let (corfu-cycle)
+                                      (funcall-interactively #'corfu-next (- corfu-count)))))
+            "C-d" (lambda () (progn (let (corfu-cycle)
+                                      (funcall-interactively #'corfu-next corfu-count)))))
   :custom
   (read-extended-command-predicate #'command-completion-default-include-p)
-  (text-mode-ispell-word-completion nil)
   (tab-always-indent 'complete)
   :config
+  (require 'orderless)
+
+  (defun orderless-fast-dispatch (word index total)
+    (and (= index 0) (= total 1) (length< word 4)
+         (cons 'orderless-literal-prefix word)))
+
+  (orderless-define-completion-style orderless-fast
+    (orderless-style-dispatchers '(orderless-fast-dispatch))
+    (orderless-matching-styles '(orderless-literal orderless-regexp)))
+
+  (setq-local completion-styles '(orderless-fast basic))
   (setq corfu-auto t
-        corfu-auto-delay 0.24
         corfu-auto-prefix 2
         corfu-cycle t
         corfu-preselect 'prompt
@@ -202,147 +230,134 @@
         corfu-quit-no-match corfu-quit-at-boundary
         tab-always-indent 'complete)
 
-  (add-to-list 'corfu-continue-commands #'+corfu/move-to-minibuffer)
-  (add-to-list 'corfu-continue-commands #'+corfu/smart-sep-toggle-escape)
   (add-hook 'evil-insert-state-exit-hook #'corfu-quit)
-  
-  ;; Enable corfu-history to maintain completion history
 
-  ;; Enable popup info for detailed information on completion
-  ;; If you reenable this use a hook
-  ;; (corfu-popupinfo-mode +1)
-  ;; (setq corfu-popupinfo-delay '(0.5 . 1.0))
+  (setq global-corfu-minibuffer
+        (lambda ()
+          (not (or (bound-and-true-p vertico--input)
+                   (eq (current-local-map) read-passwd-map)))))
 
-  ;; HACK: If you want to update the visual hints after completing minibuffer
-  ;;   commands with Corfu and exiting, you have to do it manually.
-  (defun my-corfu--insert-before-exit-minibuffer ()
-    "Manually update visual hints before exiting the minibuffer when Corfu is active."
-    (when (or (and (frame-live-p corfu--frame)
-                   (frame-visible-p corfu--frame))
-              (and (featurep 'corfu-terminal)
-                   (popon-live-p corfu-terminal--popon)))
-      (when (member isearch-lazy-highlight-timer timer-idle-list)
-        (apply (timer--function isearch-lazy-highlight-timer)
-               (timer--args isearch-lazy-highlight-timer)))
-      (when (member (bound-and-true-p anzu--update-timer) timer-idle-list)
-        (apply (timer--function anzu--update-timer)
-               (timer--args anzu--update-timer)))
-      (when (member (bound-and-true-p evil--ex-search-update-timer)
-                    timer-idle-list)
-        (apply (timer--function evil--ex-search-update-timer)
-               (timer--args evil--ex-search-update-timer)))))
+  ;; (global-corfu-mode 1)
+  )
 
-  ;; Add the advice to run before `exit-minibuffer`
-  (advice-add 'exit-minibuffer :before #'my-corfu--insert-before-exit-minibuffer))
+
+;; (use-package corfu-candidate-overlay
+;; :ensure (corfu-candidate-overlay
+;; :repo "https://code.bsdgeek.org/adam/corfu-candidate-overlay"
+;; :files (:defaults "*.el"))
+;; :after corfu
+;; :config
+;; ;; enable corfu-candidate-overlay mode globally
+;; ;; this relies on having corfu-auto set to nil
+;; ;; (corfu-candidate-overlay-mode +1)
+;;
+;; (add-hook 'minibuffer-mode-hook (lambda () (progn (setq-local corfu-auto-nil)
+;; (corfu-candidate-overlay-mode))))
+;; ;; bind Ctrl + Shift + Tab to trigger completion of the first candidate
+;; ;; (keybing <iso-lefttab> may not work for your keyboard model)
+;; (global-set-key (kbd "<tab>") 'corfu-candidate-overlay-complete-at-point))
+
+;; TODO for angular cape-sgml
+
+;; Use Dabbrev with Corfu!
+(use-package dabbrev
+  :ensure nil
+  :config
+  ;; TODO: Doom's ignore regexp
+  (add-to-list 'dabbrev-ignored-buffer-regexps "\\` ")
+  ;; Since 29.1, use `dabbrev-ignored-buffer-regexps' on older.
+  (add-to-list 'dabbrev-ignored-buffer-modes 'doc-view-mode)
+  (add-to-list 'dabbrev-ignored-buffer-modes 'pdf-view-mode)
+  (add-to-list 'dabbrev-ignored-buffer-modes 'tags-table-mode))
 
 (use-package cape
   :ensure t
-  :defer t
   :init
-  ;; Hook to add `cape-file` to `completion-at-point-functions` in `prog-mode`.
-  (add-hook 'prog-mode-hook
-            (lambda ()
-              (add-hook 'completion-at-point-functions #'cape-file -10 t)))
-
-  ;; Hooks to add `cape-elisp-block` in `org-mode` and `markdown-mode`.
-  (dolist (hook '(org-mode-hook markdown-mode-hook))
-    (add-hook hook
-              (lambda ()
-                (add-hook 'completion-at-point-functions #'cape-elisp-block 0 t))))
-
-  ;; Enable Dabbrev completion as a fallback in various modes.
   (setq cape-dabbrev-check-other-buffers t)
+  (add-hook 'completion-at-point-functions #'cape-dabbrev)
+  (add-hook 'completion-at-point-functions #'cape-file))
 
-  (defun my-dabbrev-friend-buffer-p (other-buffer)
-    "Custom function to determine if OTHER-BUFFER is a dabbrev friend."
-    (< (buffer-size other-buffer) 1000000)) ;; Replace with your buffer size limit.
-
-  (dolist (hook '(prog-mode-hook
-                  sgml-mode-hook
-                  ;;text-mode-hook
-                  conf-mode-hook
-                  comint-mode-hook
-                  minibuffer-setup-hook
-                  eshell-mode-hook))
-    (add-hook hook
-              (lambda ()
-                (add-hook 'completion-at-point-functions #'cape-dabbrev 20 t))))
-  (with-eval-after-load 'dabbrev
-    (setq dabbrev-friend-buffer-function #'my-dabbrev-friend-buffer-p
-          dabbrev-ignored-buffer-regexps
-          '("\\` "
-            "\\(?:\\(?:[EG]?\\|GR\\)TAGS\\|e?tags\\|GPATH\\)\\(<[0-9]+>\\)?")
-          dabbrev-upcase-means-case-search t)
-    (dolist (mode '(pdf-view-mode doc-view-mode tags-table-mode))
-      (add-to-list 'dabbrev-ignored-buffer-modes mode)))
-
-  (advice-add #'comint-completion-at-point :around #'cape-wrap-nonexclusive)
-  (advice-add #'eglot-completion-at-point :around #'cape-wrap-nonexclusive)
-  (advice-add #'pcomplete-completions-at-point :around #'cape-wrap-nonexclusive)
-
-  ;; Fix Eshell autocompletion on Emacs 28.
-  (when (< emacs-major-version 29)
-    (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-silent)
-    (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-purify)))
-
-;; TODO: What doe thi even do?
 ;; (use-package corfu-history
   ;; :ensure nil
   ;; :hook (corfu-mode . corfu-history-mode)
   ;; :config
-  ;; (after! savehist (add-to-list 'savehist-additional-variables 'corfu-history)))
+  ;; (add-to-list 'savehist-additional-variables 'corfu-history))
 
 (use-package corfu-popupinfo
   :ensure nil
   :hook (corfu-mode . corfu-popupinfo-mode)
+  :general
+  (:keymaps 'corfu-popupinfo-map
+            "C-h"      #'corfu-popupinfo-toggle
+            "C-S-k"    #'corfu-popupinfo-scroll-down
+            "C-S-j"    #'corfu-popupinfo-scroll-up
+            "C-<up>"   #'corfu-popupinfo-scroll-down
+            "C-<down>" #'corfu-popupinfo-scroll-up
+            "C-S-p"    #'corfu-popupinfo-scroll-down
+            "C-S-n"    #'corfu-popupinfo-scroll-up
+            "C-S-u"    #'corfu-popupinfo-scroll-up
+            "C-S-d"    #'corfu-popupinfo-scroll-down)
   :config
   (setq corfu-popupinfo-delay '(0.5 . 1.0)))
 
-;; TODO: Test this
-;; (use-package kind-icon
-  ;; :ensure t
-  ;; :after corfu
-  ;; :config
-  ;; (setq kind-icon-default-face 'corfu-default)  ;; Use corfu's default face for icons
-  ;; (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter)
-  ;; (setq kind-icon-use-icons nil))  ;; Disable icons and use text instead
-
 (use-package ws-butler
-  :ensure (ws-butler :host github :repo "lewang/ws-butler"))
+  :ensure (ws-butler :host github :repo "lewang/ws-butler")
+  :defer t
+  :hook (prog-mode . ws-butler-mode))
 
-;; (use-package indent-bars
-  ;; :ensure (indent-bars :host github :repo "jdtsmith/indent-bars")
-  ;; ;; :hook ((typescript-ts-mode angular-ts-mode) . indent-bars-ts-mode)
-  ;; :custom
-  ;; (indent-bars-treesit-support t)
-  ;; ;; (indent-bars-treesit-ignore-blank-lines-types nil)
-  ;; (indent-bars-treesit-scope '((typescript class_body)))
-                                ;; ;; program comment ternary_expression member_expression named_imports 
-                                ;; ;; statement_block switch_case switch_default type_arguments type_parameters 
-                                ;; ;; arguments array formal_parameters template_string template_substitution 
-                                ;; ;; object_pattern object object_type enum_body class_body interface_body 
-                                ;; ;; arrow_function parenthesized_expression binary_expression if_statement 
-                                ;; ;; for_statement for_in_statement while_statement do_statement else_clause)))
-;; 
-  ;; :config
-  ;; ;; (setq indent-bars-starting-column 0)
-  ;; ;; (defun set-indent-bars-spacing () (setq-local indent-bars-spacing 2))
-  ;; ;; (add-hook 'indent-bars-mode-hook 'set-indent-bars-spacing)
-;; 
-  ;; ;; (setq indent-bars-color '(:face background :blend 1.0))
-  ;; ;; (setq indent-bars-highlight-current-depth '(:face nano-popout))
-;; 
-  ;; ;; (setq indent-bars-ts-highlight-current-depth '(:face nano-popout))
-  ;; ) 
+(use-package indent-bars
+  :ensure (indent-bars :host github :repo "jdtsmith/indent-bars")
+  ;; :hook ((typescript-ts-mode . indent-bars-mode)
+         ;; (angular-ts-mode . indent-bars-mode))
+  :custom
+  (indent-bars-treesit-support t)
+  (indent-bars-treesit-ignore-blank-lines-types nil)
+  (indent-bars-treesit-scope-min-lines 1)
+  (indent-bars-treesit-scope '((typescript class_body program comment ternary_expression member_expression
+                                           named_imports statement_block switch_case switch_default
+                                           type_arguments type_parameters arguments array formal_parameters
+                                           template_string template_substitution object_pattern object
+                                           object_type enum_body class_body interface_body arrow_function
+                                           parenthesized_expression binary_expression if_statement
+                                           for_statement for_in_statement while_statement do_statement
+                                           else_clause)))
+  
+  :config
+  (setq indent-bars-starting-column 0)
+  (advice-add 'line-move-to-column :around
+	          (defalias 'my/indent-bars-prevent-passing-newline
+	            (lambda (orig col &rest r)
+		          (if-let ((indent-bars-mode)
+			               (nlp (line-end-position))
+			               (dprop (get-text-property nlp 'display))
+			               ((seq-contains-p dprop ?\n))
+			               ((> col (- nlp (point)))))
+		              (goto-char nlp)
+		            (apply orig col r)))))
+
+  (setq indent-bars-color-by-depth nil
+        indent-bars-color '(highlight :face-bg t :blend 0.01)
+        indent-bars-highlight-current-depth '(:blend 0.01)
+        indent-bars-ts-color '(highlight :face-bg t :blend 0.01)
+        indent-bars-ts-highlight-current-depth '(no-inherit :blend 1.0))
+
+  ;; (defun set-indent-bars-spacing () (setq-local indent-bars-spacing 2))
+  ;; (add-hook 'indent-bars-mode-hook 'set-indent-bars-spacing)
+  
+  ;; (setopt indent-bars-ts-color '(highlight :face-bg t :blend 0.01))
+  ;; (setopt indent-bars-ts-highlight-current-depth '(:blend 1.0))
+  )
+
+(use-package highlight-parentheses
+  :ensure (highlight-parentheses :host "github.com" :repo "emacsmirror/highlight-parentheses")
+  :defer t
+  :hook (prog-mode . highlight-parentheses-mode))
+
+(use-package editorconfig
+  :ensure t
+  :defer t
+  :hook (prog-mode . editorconfig-mode))
 
 (with-eval-after-load 'eldoc
   (eldoc-add-command 'doom/escape)
   (setq eldoc-echo-area-use-multiline-p nil))
-
-(use-package highlight-parentheses
-  :ensure (highlight-parentheses :host "github.com" :repo "emacsmirror/highlight-parentheses")
-  :hook (prog-mode . highlight-parentheses-mode)
-  :defer t
-  :config
-  (setq highlight-parentheses-colors '("#ff9d1e")))
-
