@@ -9,9 +9,10 @@
 (use-package magit
   :ensure (magit :branch "main" :host github :repo "magit/magit" :pre-build ("make" "info"))
   :commands (magit-status magit-file-delete)
-  :init
+  ;; :init
   ;; (setq magit-auto-revert-mode t)
   :config
+  (setq magit-refresh-status-buffer nil)
   (setq transient-default-level 5
         magit-diff-refine-hunk t ; show granular diffs in selected hunk
         ;; Don't autosave repo buffers. This is too magical, and saving can
@@ -27,6 +28,10 @@
   (define-key magit-mode-map "q" #'+magit/quit)
   (define-key magit-mode-map "Q" #'+magit/quit-all)
   (define-key transient-map [escape] #'transient-quit-one)
+
+  (remove-hook 'server-switch-hook 'magit-commit-diff)
+  (remove-hook 'with-editor-filter-visit-hook 'magit-commit-diff)
+  (remove-hook 'magit-refs-sections-hook 'magit-insert-tags)
 
   ;; An optimization that particularly affects macOS and Windows users: by
   ;; resolving `magit-git-executable' Emacs does less work to find the

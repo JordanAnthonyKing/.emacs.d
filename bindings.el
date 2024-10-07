@@ -93,7 +93,9 @@ all hooks after it are ignored.")
 (general-def (evil-ex-completion-map evil-ex-search-keymap)
   "C-a" #'evil-beginning-of-line
   "C-b" #'evil-backward-char
-  "C-f" #'evil-forward-char)
+  "C-f" #'evil-forward-char
+  "C-h" #'evil-backward-char
+  "C-l" #'evil-forward-char)
 
 (general-define-key
  :states '(global insert)
@@ -111,6 +113,8 @@ all hooks after it are ignored.")
   "C-z"    #'undo
   "C-j"    #'next-line
   "C-k"    #'previous-line
+  "C-h"    #'backward-char
+  "C-l"    #'forward-char
   "C-S-j"  #'scroll-up-command
   "C-S-k"  #'scroll-down-command)
 
@@ -118,7 +122,9 @@ all hooks after it are ignored.")
  :states 'insert
  :keymaps 'minibuffer-mode-map
  "C-j" #'next-line
- "C-k" #'previous-line)
+ "C-k" #'previous-line
+ "C-l" #'forward-char
+ "C-h" #'backward-char)
 
 (general-def read-expression-map
   "C-j" #'next-line-or-history-element
@@ -127,11 +133,6 @@ all hooks after it are ignored.")
 (general-def 'normal
   "C-="    #'text-scale-increase
   "C--"    #'text-scale-decrease)
-
-(general-def evil-window-map
-  "d" #'evil-window-delete)
-
-;; (general-define-key
 
 (general-create-definer my-leader-def
   :states '(normal visual motion)   ;; Apply to these evil states
@@ -173,29 +174,26 @@ all hooks after it are ignored.")
   "b /" #'consult-line
 
   "c" '(:ignore t :which-key "code")
-  "c a" #'lsp-execute-code-action
-  "c o" #'lsp-organize-imports
-  "c l" 'lsp-map
-  "c r" #'lsp-rename
-  "c s" #'consult-lsp-symbols
+  "c a" #'eglot-code-actions
+  "c A" #'eglot-code-action-quickfix
   "c c" #'compile
   "c C" #'recompile
-  "c d" #'lsp-find-definition
-  "c D" #'lsp-find-references
-  ;; TODO: Move to eval probably
   "c e" #'eval-region
   "c E" #'eval-buffer
-  "c f" #'lsp-format-region
-  "c F" #'lsp-format-buffer
   "c w" #'delete-trailing-whitespace
-  "c e" #'consult-lsp-diagnostics
-  "c i" #'indent-region
+  "c I" #'indent-region
+  "c j" #'consult-eglot-symbols
+  "c d" #'xref-find-definitions
+  "c D" #'xref-find-references
+  "c r" #'eglot-rename
+  "c R" #'eglot-reconnect
+  "c i" #'eglot-find-implementation
+  "c t" #'eglot-find-typeDefinition
 
   "f" '(:ignore t :which-key "files")
   "f f" #'find-file
   "f F" #'find-file-other-window
-  ;; "f d" #'dired-jump
-  "f d" #'dirvish
+  "f d" #'dired-jump
   "f r" #'consult-recentf
   "f c" #'editorconfig-find-current-editorconfig
   "f D" #'delete-file
@@ -338,5 +336,7 @@ all hooks after it are ignored.")
   ;; "w s" #'split-window-vertically
   ;; "w v" #'split-window-horizontally
 
-  "TAB" '(:ignore t :which-key "workspaces")
-  "TAB TAB" #'tab-bar-echo-area-display-tab-names)
+  ;; "TAB" '(:ignore t :which-key "workspaces")
+  ;; "TAB TAB" #'tab-bar-echo-area-display-tab-names
+
+  )
