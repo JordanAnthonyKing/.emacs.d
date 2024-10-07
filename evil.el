@@ -55,8 +55,14 @@
   (:states 'normal
            "s"     #'evil-avy-goto-char-timer)
   (:states '(visual normal)
-           "C-e"   #'evil-beginning-of-line
-           "C-b"   #'evil-end-of-line)
+           "C-e"   #'evil-beginning-of-line)
+  (:states 'insert
+           "C-h"   #'evil-backward-char
+           "C-l"   #'evil-forward-char
+           "C-j"   #'evil-next-line
+           "C-k"   #'evil-previous-char)
+  (:keymaps 'evil-window-map
+            "d" #'evil-window-delete)
   :preface
   (setq evil-search-module 'evil-search ;; TODO: investigate isearch without regex
         evil-ex-visual-char-range t
@@ -64,6 +70,7 @@
         evil-visual-state-cursor 'hollow
         evil-ex-interactive-search-highlight 'selected-window
         evil-kbd-macros-suppress-motion-error t
+        evil-disable-insert-state-bindings t
         evil-undo-system 'undo-redo)
 
   :config

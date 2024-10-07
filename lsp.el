@@ -1,20 +1,90 @@
 ;;; lsp.el --- Configuration for language servers -*- no-byte-compile: t; lexical-binding: t; -*-
 
-;; (require 'treesit)
-;;
-;; (define-derived-mode angular-ts-mode html-ts-mode "Angular"
-;;   "Major mode for editing Angular flavoured HTML, powered by tree-sitter."
-;;   :group 'angular
-;;   (add-to-list 'find-sibling-rules
-;;                '("\\(.+\\)\\.component\\.html\\'" "\\1.component.ts"))
-;;   (add-to-list 'find-sibling-rules
-;;                '("\\(.+\\)\\.container\\.html\\'" "\\1.container.ts")))
-;;
-;; (when (treesit-ready-p 'angular)
-;;   (add-to-list 'auto-mode-alist '("\\.component\\.html\\'" . angular-ts-mode))
-;;   (add-to-list 'auto-mode-alist '("\\.container\\.html\\'" . angular-ts-mode)))
-;;
-;; (provide 'angular-ts-mode)
+(require 'comint)
+(require 'ansi-color)
+(require 'project)
+
+(defvar ng-project "angular-app"
+  "The Angular project name to use for `ng test`.")
+
+(defvar ng-karma-config-path nil
+  "The path to the Karma configuration file to use for `ng test`.")
+
+(defun +project-root ()
+  "Return the root directory of the current project as determined by `project.el`."
+  (let ((project (project-current)))
+    (if project
+        (file-name-as-directory (project-root project))
+      (error "Not in a project!"))))
+
+(defun ng-path ()
+  "Return the path to the Angular CLI executable `ng`."
+  (expand-file-name "node_modules/@angular/cli/bin/ng" (+project-root)))
+
+(defun run-ng-command (command buffer-name)
+  "Run the given COMMAND in a comint buffer named BUFFER-NAME."
+  (let* ((default-directory (+project-root))  ;; Ensure we are in the project root
+         (buffer (get-buffer-create buffer-name))
+         (comint-buffer (make-comint-in-buffer "Angular Test" buffer "bash" nil "-c" command)))
+    (switch-to-buffer buffer)
+    (with-current-buffer buffer
+      (comint-mode)
+      (add-hook 'comint-output-filter-functions 'ansi-color-process-output nil t)
+      (setq-local comint-scroll-to-bottom-on-output t))))
+
+(defun run-ng-test-project (&optional headless)
+  "Run `ng test` for the whole Angular project.
+If HEADLESS is non-nil, run tests in Chrome headless mode."
+  (interactive "P")  ;; Use "P" to pass the prefix argument interactively
+  (let ((ng-path (ng-path))
+        (karma-config-arg (if ng-karma-config-path
+                              (concat "--karma-config " ng-karma-config-path)
+                            ""))
+        (browsers-arg "--browsers=Chrome --watch"))
+    ;; Prepend the command with `node`
+    (run-ng-command (format "node %s test %s %s %s" ng-path ng-project karma-config-arg browsers-arg
+                               )
+                       "*Angular Test*")))
+
+(defun run-ng-test-file (&optional headless)
+  "Run `ng test` for the current file, targeting its corresponding `.spec.ts` file.
+If HEADLESS is non-nil, run tests in Chrome headless mode."
+  (interactive "P")  ;; Use "P" to pass the prefix argument interactively
+  (let* ((file (buffer-file-name))
+         (relative-file (file-relative-name file (+project-root)))
+         (spec-file (if (string-match-p "\\.spec\\.ts$" file)
+                        relative-file
+                      (replace-regexp-in-string "\\.ts$" ".spec.ts" relative-file)))
+         (ng-path (ng-path))
+         (karma-config-arg (if ng-karma-config-path
+                               (concat "--karma-config " ng-karma-config-path)
+                             ""))
+         (browsers-arg "--browsers=Chrome --watch"))
+    ;; Prepend the command with `node`
+    (run-ng-command (format "node %s test %s --include=%s %s %s" ng-path ng-project spec-file karma-config-arg browsers-arg
+                               )
+                       "*Angular Test - Current File*")))
+
+
+(setq ng-project "location")
+(setq ng-karma-config-path "./apps/location/karma.conf.js")
+
+
+(require 'treesit)
+
+(define-derived-mode angular-ts-mode html-ts-mode "Angular"
+  "Major mode for editing Angular flavoured HTML, powered by tree-sitter."
+  :group 'angular
+  (add-to-list 'find-sibling-rules
+               '("\\(.+\\)\\.component\\.html\\'" "\\1.component.ts"))
+  (add-to-list 'find-sibling-rules
+               '("\\(.+\\)\\.container\\.html\\'" "\\1.container.ts")))
+
+(when (treesit-ready-p 'angular)
+  (add-to-list 'auto-mode-alist '("\\.component\\.html\\'" . angular-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.container\\.html\\'" . angular-ts-mode)))
+
+(provide 'angular-ts-mode)
 
 ;; TODO: This not activating right
 (use-package typescript-ts-mode
@@ -27,190 +97,236 @@
   (add-to-list 'find-sibling-rules
                '("\\(.+\\)\\.container\\.ts\\'" "\\1.container.html"))
   (add-to-list 'find-sibling-rules
-               '("\\(.+\\)\\.container\\.spec\\.ts\\'" "\\1.container.ts")))
+               '("\\(.+\\)\\.spec\\.ts\\'" "\\1.component.ts"))
 
-;; (use-package treesit-langs
-;;   :ensure (treesit-langs
-;;            :host github
-;;            :repo "JordanAnthonyKing/treesit-langs"
-;;            :files ("treesit-*.el" "queries"))
-;;   :defer t
-;;   :hook ((prog-mode angular-ts-mode) . (lambda ()
-;;                                          ;; some mode is better be highlighted not using tree-sitter
-;;                                          (unless (member major-mode '(sh-mode))
-;;                                            (ignore-errors (treesit-hl-toggle 'on)))))
-;;   :custom
-;;   (treesit-langs-git-dir nil)
-;;   (treesit-langs-grammar-dir (expand-file-name "tree-sitter" user-emacs-directory))
-;;   :config
-;;   (add-to-list 'treesit-extra-load-path treesit-langs-grammar-dir))
+  (add-to-list 'compilation-error-regexp-alist 'node)
 
-;; (use-package add-node-modules-path
-;;   :ensure t
-;;   :defer t
-;;   :hook ((typescript-ts-mode . add-node-modules-path)
-;;          (angular-ts-mode . add-node-modules-path)))
-;;
-;; (use-package eslintd-fix
-;;   :ensure t
-;;   :defer t
-;;   :hook (typescript-ts-mode . eslintd-fix-mode))
+  (add-to-list 'compilation-error-regexp-alist-alist
+          '(node "at [^ ]+ (\\(.+?\\):\\([[:digit:]]+\\):\\([[:digit:]]+\\)" 1 2 3)))
 
-(use-package lsp-mode
-  :ensure t
+(setq treesit-font-lock-level 5)
+
+;; TODO: Update angular in treesit langs fork
+(use-package treesit-langs
+  :ensure (treesit-langs
+           :host github
+           :repo "JordanAnthonyKing/treesit-langs"
+           :files ("treesit-*.el" "queries"))
   :defer t
-  :hook ((typescript-ts-mode . lsp)
-         (angular-ts-mode . lsp)
-         (lsp-mode . lsp-enable-which-key-integration))
-  :commands lsp
-  :init
-  (setq lsp-headerline-breadcrumb-enable nil
-        lsp-enable-on-type-formatting nil
-        lsp-modeline-code-actions-enable nil
-        lsp-modeline-diagnostics-enable nil
-        lsp-keep-workspace-alive nil
-        lsp-enable-folding nil
-        lsp-enable-text-document-color nil
-        lsp-enable-snippet nil
-        lsp-keymap-prefix nil
-        lsp-file-watch-threshold 9001
-        lsp-typescript-indent-level 2
-        lsp-auto-execute-action nil
-        lsp-signature-function 'lsp-signature-posframe
-        lsp-completion-provider :none)
+  :hook ((angular-ts-mode typescript-ts-mode) . treesit-hl-toggle)
+  :custom
+  (treesit-langs-git-dir nil)
+  (treesit-langs-grammar-dir (expand-file-name "tree-sitter" user-emacs-directory))
   :config
-  (defun +lsp-signature-stop-maybe-h ()
-    "Close the displayed `lsp-signature'."
-    (when lsp-signature-mode
-      (lsp-signature-stop)
-      t))
+  (add-to-list 'treesit-extra-load-path treesit-langs-grammar-dir))
 
-  (add-hook 'doom-escape-hook #'+lsp-signature-stop-maybe-h))
+(setq project-vc-ignores '("target/" "bin/" "obj/" "node_modules/")
+      project-vc-extra-root-markers '(".project" "go.mod" "Cargo.toml"
+                                      "project.clj" "pom.xml" "package.json"
+                                      "angular.json" "Makefile" "README.org"
+                                      "README.md"))
 
-(use-package consult-lsp
-  :ensure t
+(use-package eglot
+  :ensure nil
+  :commands (eglot eglot-ensure)
+  :hook (typescript-ts-mode . eglot-ensure)
+  :hook (angular-ts-mode . eglot-ensure)
   :defer t
   :general
-  (:keymaps 'lsp-mode-map
-            [remap xref-find-apropos] #'consult-lsp-symbols)
-  :commands consult-lsp-symbols)
+  (:states '(normal visual)
+           :keymaps 'eglot-mode-map
+           "gd"    #'+lookup/definition
+           "gD"    #'+lookup/references)
+  :init
+  (setq eglot-sync-connect 1
+        eglot-autoshutdown t
+        eglot-auto-display-help-buffer nil)
 
-(use-package flycheck
+  :config
+  (add-to-list 'eglot-server-programs
+               '(angular-ts-mode "ngserver"
+                                 "--stdio"
+                                 "--tsProbeLocations"
+                                 "c:/Program Files/nodejs/node_modules"
+                                 "--ngProbeLocations"
+                                 "c:/Program Files/nodejs/node_modules/@angular/language-server/node_modules/"))
+
+  (cl-callf plist-put eglot-events-buffer-config :size 0)
+
+  (add-hook 'after-revert-hook 'eglot-reconnect))
+
+;; (use-package dape
+;;   :preface
+;;   ;; By default dape shares the same keybinding prefix as `gud'
+;;   ;; If you do not want to use any prefix, set it to nil.
+;;   ;; (setq dape-key-prefix "\C-x\C-a")
+;;
+;;   :hook
+;;   ;; Save breakpoints on quit
+;;   ((kill-emacs . dape-breakpoint-save)
+;;   ;; Load breakpoints on startup
+;;    (after-init . dape-breakpoint-load))
+;;
+;;   :init
+;;   ;; To use window configuration like gud (gdb-mi)
+;;   ;; (setq dape-buffer-window-arrangement 'gud)
+;;
+;;   :config
+;;   ;; Info buffers to the right
+;;   (setq dape-buffer-window-arrangement 'right)
+;;
+;;   ;; Global bindings for setting breakpoints with mouse
+;;   ;; (dape-breakpoint-global-mode)
+;;
+;;   ;; Pulse source line (performance hit)
+;;   (add-hook 'dape-display-source-hook 'pulse-momentary-highlight-one-line)
+;;
+;;   ;; To not display info and/or buffers on startup
+;;   ;; (remove-hook 'dape-start-hook 'dape-info)
+;;   ;; (remove-hook 'dape-start-hook 'dape-repl)
+;;
+;;   ;; To display info and/or repl buffers on stopped
+;;   (add-hook 'dape-stopped-hook 'dape-info)
+;;   (add-hook 'dape-stopped-hook 'dape-repl)
+;;
+;;   ;; Kill compile buffer on build success
+;;   ;; (add-hook 'dape-compile-hook 'kill-buffer)
+;;
+;;   ;; Save buffers on startup, useful for interpreted languages
+;;   ;; (add-hook 'dape-start-hook (lambda () (save-some-buffers t t)))
+;;
+;;   ;; Projectile users
+;;   ;; (setq dape-cwd-fn 'projectile-project-root)
+;;   ;; (add-to-list 'dape-configs
+;;   ;;          `(angular
+;;   ;;   	 modes (js-mode js-ts-mode)
+;;   ;;   	 command "node"
+;;   ;;   	 command-cwd ,(concat user-emacs-directory "debug-adapters/js-debug")
+;;   ;;   	 command-args "dapDebugAdapter.js"
+;;   ;;   	 ;; port dape-configs-port
+;;   ;;   	 :name "DEBUG"
+;;   ;;   	 :userDataDir nil
+;;   ;;   	 :type "chrome"
+;;   ;;        :request "launch"
+;;   ;;        :url "https://ied015.corp.soti.net/sotixsight/i/liveView"))
+;;
+;;   ;; (add-to-list 'dape-configs
+;;   ;;              `(angular
+;;   ;;                modes (typescript-mode typescript-ts-mode angular-ts-mode)
+;;   ;;                command "node"
+;;   ;;                port 9222
+;;   ;;                command-cwd ,(concat user-emacs-directory "debug-adapters/js-debug")
+;;   ;;                ;; command-args "dapDebugAdapter.js"
+;;   ;;                command-args (,(concat user-emacs-directory "debug-adapters/js-debug/src/dapDebugServer.js") "9222")
+;;   ;;                ;; :name "https://ied015.corp.soti.net/sotixsight/i/liveView"
+;;   ;;                ;; ;; :userDataDir nil
+;;   ;;                ;; :type "chrome"
+;;   ;;                ;; :request "launch"
+;;   ;;                ;; :url "https://ied015.corp.soti.net/sotixsight/i/liveView"
+;;   ;;                :name "DEBUG"
+;;   ;;   	         ;;:userDataDir nil
+;;   ;;   	         :type "pwa-chrome"
+;;   ;;   	         ;;:trace nil
+;;   ;;                :request "attach"
+;;   ;;   	         ;; :url  "https://ied015.corp.soti.net/sotixsight/i/liveView"
+;;   ;;                ;; :port 9222
+;;   ;;   	         ;; :webRoot "webpack://"
+;;   ;;                ;;:sourceMaps t
+;;   ;;               :webRoot ,(lambda ()
+;;   ;;                               (read-string "Root: "
+;;   ;;                                   (funcall dape-cwd-fn))))
+;;   ;;
+;;   ;;                )
+;;
+;;
+;; (setq dape-configs-adapter-dir (file-name-as-directory (concat user-emacs-directory "debug-adapters")))
+;;   (setq dape-configs-port 8123)
+;;
+;;   (add-to-list 'dape-configs
+;; 	       `(js-debug-angular
+;; 		 modes (js-mode js-ts-mode)
+;; 		 command "node"
+;; 		 command-cwd ,(concat dape-configs-adapter-dir "js-debug")
+;; 		 command-args (,(concat user-emacs-directory "debug-adapters/js-debug/src/dapDebugServer.js") "8123")
+;; 		 port dape-configs-port
+;; 		 :name "DEBUG"
+;; 		 :userDataDir nil
+;; 		 :type "pwa-chrome"
+;; 		 :trace nil
+;; 		 ;; :url ,(lambda ()
+;; 			 ;; (read-string "Url: "
+;; 				      ;; "http://localhost:3000"))
+;; 		 :webRoot ,(lambda ()
+;; 			     (read-string "Root: "
+;; 					  (funcall dape-cwd-fn))))))
+
+(use-package flymake
+  :ensure nil
+  :defer t
+  :hook ((angular-ts-mode typescript-ts-mode sgml-mode) . flymake-mode)
+  :config
+  (setq flymake-show-diagnostics-at-end-of-line 'short))
+
+(use-package dumb-jump
   :ensure t
   :defer t
-  :hook ((typescript-ts-mode . flycheck-mode)
-         (angular-ts-mode . flycheck-mode))
+  :commands dumb-jump-result-follow
   :config
-  (delq 'new-line flycheck-check-syntax-automatically)
-  (setq flycheck-idle-change-delay 1.0)
-  (setq flycheck-buffer-switch-check-intermediate-buffers t)
-  (setq flycheck-display-errors-delay 0.25)
+  (setq dumb-jump-prefer-search 'rg
+        dumb-jump-aggressive nil
+        dumb-jump-selector 'completing-read)
+  (setq dumb-jump-language-file-exts
+        (append dumb-jump-language-file-exts
+                '((:language "typescript" :ext "html" :agtype "html" :rgtype "html"))))
 
-  (defun +syntax-check-buffer-h ()
-    "Flycheck buffer on ESC in normal mode."
-    (when flycheck-mode
-      (ignore-errors (flycheck-buffer))
-      nil))
+  (setq dumb-jump-language-file-exts
+        (append dumb-jump-language-file-exts
+                '((:language "angular" :ext "html" :agtype "html" :rgtype "html")
+                  (:language "angular" :ext "ts" :agtype "ts" :rgtype "ts")))))
 
-  (add-hook 'doom-escape-hook #'+syntax-check-buffer-h))
-
-(use-package consult-flycheck
-  :ensure t
-  :defer t)
-
-(use-package flycheck-popup-tip
-  :ensure t
-  :defer t
-  :hook (flycheck-mode . flycheck-popup-tip-mode)
-  :commands flycheck-popup-tip-show-popup flycheck-popup-tip-delete-popup
-  :config
-  (setq flycheck-popup-tip-error-prefix "[!] ")
-
-  ;; HACK: Only display the flycheck popup if we're in normal mode (for evil
-  ;;   users) or if no selection or completion is active. This popup can
-  ;;   interfere with the active evil mode, clear active regions, and other
-  ;;   funny business (see #7242).
-  (defun +syntax--disable-flycheck-popup-tip-maybe-a (&rest _)
-    (if (and (bound-and-true-p evil-local-mode)
-             (not (evil-emacs-state-p)))
-        (evil-normal-state-p)
-      (and (not (region-active-p))
-           (not (ignore-errors (>= corfu--index 0))))))
-
-  (advice-add #'flycheck-popup-tip-show-popup :before-while #'+syntax--disable-flycheck-popup-tip-maybe-a))
-
-(use-package flycheck-posframe
-  :ensure t
-  :defer t
-  :after evil
-  :hook (flycheck-mode . flycheck-posframe-mode)
-  :config
-  (setq flycheck-posframe-warning-prefix "[?] "
-        flycheck-posframe-info-prefix "[i] "
-        flycheck-posframe-error-prefix "[!] ")
-
-  ;; HACK: Hide the flycheck posframe immediately on the next keypress/user
-  ;;   action, otherwise it lingers until the next time the user is idle.
-  (defun +syntax--flycheck-posframe-hide-h ()
-    (unless (flycheck-posframe-check-position)
-      (posframe-hide flycheck-posframe-buffer))
-    (remove-hook 'post-command-hook #'+syntax--flycheck-posframe-hide-h))
-
-  (defun +syntax-hide-posframe-on-next-command-a (fn &rest args)
-    (letf! ((defun posframe-show (&rest args)
-              (add-hook 'post-command-hook #'+syntax--flycheck-posframe-hide-h)
-              (apply posframe-show args)))
-           (apply fn args)))
-
-  (advice-add #'flycheck-posframe-show-posframe :around #'+syntax-hide-posframe-on-next-command-a)
-
-  (add-hook 'flycheck-posframe-inhibit-functions #'evil-replace-state-p)
-  (add-hook 'flycheck-posframe-inhibit-functions #'evil-insert-state-p))
-
-;; (use-package dumb-jump
-;; :commands dumb-jump-result-follow
-;; :config
-;; (setq dumb-jump-prefer-search 'rg
-;; dumb-jump-aggressive nil
-;; dumb-jump-selector 'completing-read)
-;; (setq dumb-jump-language-file-exts
-;; (append dumb-jump-language-file-exts
-;; '((:language "typescript" :ext "html" :agtype "html" :rgtype "html"))))
-;; 
-;; (setq dumb-jump-language-file-exts
-;; (append dumb-jump-language-file-exts
-;; '((:language "angular" :ext "html" :agtype "html" :rgtype "html")
-;; (:language "angular" :ext "ts" :agtype "ts" :rgtype "ts")))))
-
-;; TODO: After conflicting with hook?
 (use-package corfu
   :ensure t
   :defer t
   :hook (elpaca-after-init . global-corfu-mode)
   :general
   (:keymaps 'corfu-mode-map
-            :states  'insert
+            :states 'insert
             "C-@" #'completion-at-point
             "C-SPC" #'completion-at-point
-            "C-n"   #'corfu-next
-            "C-p"   #'corfu-previous)
+            "C-n" #'corfu-next
+            "C-p" #'corfu-previous)
   (:keymaps 'corfu-mode-map
-            :states  'normal
-            "C-SPC" (lambda () (progn (call-interactively #'evil-insert-state)
-                                      (call-interactively #'completion-at-point))))
+            :states 'normal
+            "C-SPC" (lambda ()
+                      (interactive)
+                      (call-interactively #'evil-insert-state)
+                      (call-interactively #'completion-at-point)))
   (:keymaps 'corfu-map
             "C-k" #'corfu-previous
             "C-j" #'corfu-next
-            "C-u" (lambda () (progn (let (corfu-cycle)
-                                      (funcall-interactively #'corfu-next (- corfu-count)))))
-            "C-d" (lambda () (progn (let (corfu-cycle)
-                                      (funcall-interactively #'corfu-next corfu-count)))))
+            "TAB" #'corfu-next
+            "[tab]" #'corfu-next
+            "S-TAB" #'corfu-previous
+            "[backtab]" #'corfu-previous
+            "C-u" (lambda ()
+                    (interactive)
+                    (let ((corfu-cycle nil))
+                      (call-interactively #'corfu-next (- corfu-count))))
+            "C-d" (lambda ()
+                    (interactive)
+                    (let ((corfu-cycle nil))
+                      (call-interactively #'corfu-next corfu-count))))
+
+  (:keymaps 'corfu-map
+            :states 'insert
+            "C-SPC" #'corfu-insert-separator)
   :custom
   (read-extended-command-predicate #'command-completion-default-include-p)
   (tab-always-indent 'complete)
   :config
   (require 'orderless)
 
+  ;; Orderless fast dispatch for small literals
   (defun orderless-fast-dispatch (word index total)
     (and (= index 0) (= total 1) (length< word 4)
          (cons 'orderless-literal-prefix word)))
@@ -219,9 +335,11 @@
     (orderless-style-dispatchers '(orderless-fast-dispatch))
     (orderless-matching-styles '(orderless-literal orderless-regexp)))
 
+  ;; Configure corfu completion styles and settings
   (setq-local completion-styles '(orderless-fast basic))
   (setq corfu-auto t
-        corfu-auto-prefix 2
+        corfu-auto-prefix 1
+        corfu-auto-delay 0
         corfu-cycle t
         corfu-preselect 'prompt
         corfu-count 16
@@ -230,34 +348,19 @@
         corfu-quit-no-match corfu-quit-at-boundary
         tab-always-indent 'complete)
 
+  (keymap-set corfu-map "RET" `( menu-item "" nil :filter
+                                 ,(lambda (&optional _)
+                                    (and (derived-mode-p 'eshell-mode 'comint-mode)
+                                         #'corfu-send))))
+
+  ;; Quit corfu when leaving insert state
   (add-hook 'evil-insert-state-exit-hook #'corfu-quit)
 
+  ;; Minibuffer completion behavior
   (setq global-corfu-minibuffer
         (lambda ()
           (not (or (bound-and-true-p vertico--input)
-                   (eq (current-local-map) read-passwd-map)))))
-
-  ;; (global-corfu-mode 1)
-  )
-
-
-;; (use-package corfu-candidate-overlay
-;; :ensure (corfu-candidate-overlay
-;; :repo "https://code.bsdgeek.org/adam/corfu-candidate-overlay"
-;; :files (:defaults "*.el"))
-;; :after corfu
-;; :config
-;; ;; enable corfu-candidate-overlay mode globally
-;; ;; this relies on having corfu-auto set to nil
-;; ;; (corfu-candidate-overlay-mode +1)
-;;
-;; (add-hook 'minibuffer-mode-hook (lambda () (progn (setq-local corfu-auto-nil)
-;; (corfu-candidate-overlay-mode))))
-;; ;; bind Ctrl + Shift + Tab to trigger completion of the first candidate
-;; ;; (keybing <iso-lefttab> may not work for your keyboard model)
-;; (global-set-key (kbd "<tab>") 'corfu-candidate-overlay-complete-at-point))
-
-;; TODO for angular cape-sgml
+                   (eq (current-local-map) read-passwd-map))))))
 
 ;; Use Dabbrev with Corfu!
 (use-package dabbrev
@@ -268,21 +371,25 @@
   ;; Since 29.1, use `dabbrev-ignored-buffer-regexps' on older.
   (add-to-list 'dabbrev-ignored-buffer-modes 'doc-view-mode)
   (add-to-list 'dabbrev-ignored-buffer-modes 'pdf-view-mode)
-  (add-to-list 'dabbrev-ignored-buffer-modes 'tags-table-mode))
+  (add-to-list 'dabbrev-ignored-buffer-modes 'tags-table-mode)
+  (add-to-list 'dabbrev-ignored-buffer-modes 'comint-mode))
 
 (use-package cape
   :ensure t
   :init
   (setq cape-dabbrev-check-other-buffers t)
   (add-hook 'completion-at-point-functions #'cape-dabbrev)
-  (add-hook 'completion-at-point-functions #'cape-file))
+  (add-hook 'completion-at-point-functions #'cape-file)
+  (add-hook 'completion-at-point-functions #'cape-sgml))
 
-;; (use-package corfu-history
-  ;; :ensure nil
-  ;; :hook (corfu-mode . corfu-history-mode)
-  ;; :config
-  ;; (add-to-list 'savehist-additional-variables 'corfu-history))
+(use-package corfu-history
+  :ensure nil
+  :hook (corfu-mode . corfu-history-mode)
+  :config
+  (require 'savehist)
+  (add-to-list 'savehist-additional-variables 'corfu-history))
 
+;; TODO: Elisp?
 (use-package corfu-popupinfo
   :ensure nil
   :hook (corfu-mode . corfu-popupinfo-mode)
@@ -305,53 +412,12 @@
   :defer t
   :hook (prog-mode . ws-butler-mode))
 
-(use-package indent-bars
-  :ensure (indent-bars :host github :repo "jdtsmith/indent-bars")
-  ;; :hook ((typescript-ts-mode . indent-bars-mode)
-         ;; (angular-ts-mode . indent-bars-mode))
-  :custom
-  (indent-bars-treesit-support t)
-  (indent-bars-treesit-ignore-blank-lines-types nil)
-  (indent-bars-treesit-scope-min-lines 1)
-  (indent-bars-treesit-scope '((typescript class_body program comment ternary_expression member_expression
-                                           named_imports statement_block switch_case switch_default
-                                           type_arguments type_parameters arguments array formal_parameters
-                                           template_string template_substitution object_pattern object
-                                           object_type enum_body class_body interface_body arrow_function
-                                           parenthesized_expression binary_expression if_statement
-                                           for_statement for_in_statement while_statement do_statement
-                                           else_clause)))
-  
-  :config
-  (setq indent-bars-starting-column 0)
-  (advice-add 'line-move-to-column :around
-	          (defalias 'my/indent-bars-prevent-passing-newline
-	            (lambda (orig col &rest r)
-		          (if-let ((indent-bars-mode)
-			               (nlp (line-end-position))
-			               (dprop (get-text-property nlp 'display))
-			               ((seq-contains-p dprop ?\n))
-			               ((> col (- nlp (point)))))
-		              (goto-char nlp)
-		            (apply orig col r)))))
-
-  (setq indent-bars-color-by-depth nil
-        indent-bars-color '(highlight :face-bg t :blend 0.01)
-        indent-bars-highlight-current-depth '(:blend 0.01)
-        indent-bars-ts-color '(highlight :face-bg t :blend 0.01)
-        indent-bars-ts-highlight-current-depth '(no-inherit :blend 1.0))
-
-  ;; (defun set-indent-bars-spacing () (setq-local indent-bars-spacing 2))
-  ;; (add-hook 'indent-bars-mode-hook 'set-indent-bars-spacing)
-  
-  ;; (setopt indent-bars-ts-color '(highlight :face-bg t :blend 0.01))
-  ;; (setopt indent-bars-ts-highlight-current-depth '(:blend 1.0))
-  )
-
 (use-package highlight-parentheses
   :ensure (highlight-parentheses :host "github.com" :repo "emacsmirror/highlight-parentheses")
   :defer t
-  :hook (prog-mode . highlight-parentheses-mode))
+  :hook (prog-mode . highlight-parentheses-mode)
+  :config
+  (setq highlight-parentheses-colors '("#ff6c6b")))
 
 (use-package editorconfig
   :ensure t
