@@ -80,6 +80,7 @@ If HEADLESS is non-nil, run tests in Chrome headless mode."
   (add-to-list 'find-sibling-rules
                '("\\(.+\\)\\.container\\.html\\'" "\\1.container.ts")))
 
+
 (when (treesit-ready-p 'angular)
   (add-to-list 'auto-mode-alist '("\\.component\\.html\\'" . angular-ts-mode))
   (add-to-list 'auto-mode-alist '("\\.container\\.html\\'" . angular-ts-mode)))
@@ -113,7 +114,7 @@ If HEADLESS is non-nil, run tests in Chrome headless mode."
            :repo "JordanAnthonyKing/treesit-langs"
            :files ("treesit-*.el" "queries"))
   :defer t
-  :hook ((angular-ts-mode typescript-ts-mode) . treesit-hl-toggle)
+  ;; :hook ((angular-ts-mode typescript-ts-mode) . treesit-hl-toggle)
   :custom
   (treesit-langs-git-dir nil)
   (treesit-langs-grammar-dir (expand-file-name "tree-sitter" user-emacs-directory))
@@ -126,6 +127,7 @@ If HEADLESS is non-nil, run tests in Chrome headless mode."
                                       "angular.json" "Makefile" "README.org"
                                       "README.md"))
 
+;; TODO: No consult eglot?
 (use-package eglot
   :ensure nil
   :commands (eglot eglot-ensure)
@@ -155,6 +157,36 @@ If HEADLESS is non-nil, run tests in Chrome headless mode."
 
   (add-hook 'after-revert-hook 'eglot-reconnect))
 
+;; TODO: Embark
+(use-package consult-eglot
+  :ensure t
+  :defer t)
+
+(use-package npm
+  :ensure t
+  :defer t
+  :init
+  :config
+  (add-to-list 'compilation-error-regexp-alist-alist
+               '(angular-warning
+                 "^Deprecation Warning on line \\([0-9]+\\), column \\([0-9]+\\) of \\(.+\\):"
+                 3 1 2 1))
+  (add-to-list 'compilation-error-regexp-alist-alist
+               '(angular-error
+                 "^Error: \\(.*\\):\\([0-9]+\\):\\([0-9]+\\) - error TS[0-9]+:"
+                 1 2 3 2))
+  (add-to-list 'compilation-error-regexp-alist 'angular-warning)
+  (add-to-list 'compilation-error-regexp-alist 'angular-error)
+  (add-hook 'npm-mode-hook (lambda ()
+                             (setq-local compilation-error-regexp-alist (list 'angular-warning 'angular-error))))
+  (add-hook 'npm-mode-hook 'ansi-colorful-mode)
+  (add-hook 'compilation-filter-hook (lambda ()
+                                       (ansi-colorful--disable)
+                                       (ansi-colorful--enable)))
+  (advice-add 'npm-common--compile :around
+              (lambda (orig-fun &rest args)
+                (let ((default-directory (project-root (project-current t))))
+                  (apply orig-fun args)))))
 ;; (use-package dape
 ;;   :preface
 ;;   ;; By default dape shares the same keybinding prefix as `gud'
@@ -324,6 +356,8 @@ If HEADLESS is non-nil, run tests in Chrome headless mode."
   (read-extended-command-predicate #'command-completion-default-include-p)
   (tab-always-indent 'complete)
   :config
+  (keymap-unset corfu-map "RET")
+
   (require 'orderless)
 
   ;; Orderless fast dispatch for small literals
@@ -348,12 +382,6 @@ If HEADLESS is non-nil, run tests in Chrome headless mode."
         corfu-quit-no-match corfu-quit-at-boundary
         tab-always-indent 'complete)
 
-  (keymap-set corfu-map "RET" `( menu-item "" nil :filter
-                                 ,(lambda (&optional _)
-                                    (and (derived-mode-p 'eshell-mode 'comint-mode)
-                                         #'corfu-send))))
-
-  ;; Quit corfu when leaving insert state
   (add-hook 'evil-insert-state-exit-hook #'corfu-quit)
 
   ;; Minibuffer completion behavior
@@ -417,7 +445,7 @@ If HEADLESS is non-nil, run tests in Chrome headless mode."
   :defer t
   :hook (prog-mode . highlight-parentheses-mode)
   :config
-  (setq highlight-parentheses-colors '("#ff6c6b")))
+  (setq highlight-parentheses-colors '("#b2e4dc")))
 
 (use-package editorconfig
   :ensure t

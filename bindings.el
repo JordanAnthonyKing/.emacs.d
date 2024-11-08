@@ -15,7 +15,7 @@
                  ([C-m] [?\C-m] return kp-return)))
   (define-key
    input-decode-map fallback
-   (lambda ()
+   (lambda (&rest _)
      (interactive)
      (let ((keys (this-single-command-raw-keys)))
        (if (and (display-graphic-p)
@@ -147,6 +147,14 @@ all hooks after it are ignored.")
   "w" 'evil-window-map
   "u" #'universal-argument
 
+  "n p m" #'npm
+
+  "a i" '(:ignore t :which-key "AI")
+  "a i a" #'gptel-add
+  "a i A" #'gptel-add-file
+  "a i m" #'gptel-menu
+  "a i c" #'gptel
+
   "b" '(:ignore t :which-key "buffers")
   "b b" #'consult-buffer
   "b B" #'consult-buffer-other-window
@@ -189,6 +197,9 @@ all hooks after it are ignored.")
   "c R" #'eglot-reconnect
   "c i" #'eglot-find-implementation
   "c t" #'eglot-find-typeDefinition
+  "c n" #'flymake-goto-next-error
+  "c p" #'flymake-goto-prev-error
+  "c f" #'eglot-format
 
   "f" '(:ignore t :which-key "files")
   "f f" #'find-file
