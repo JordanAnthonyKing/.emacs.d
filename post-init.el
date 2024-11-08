@@ -18,10 +18,32 @@
 ;; mouse-wheel-scroll-amount '(2 ((shift) . hscroll))
 ;; mouse-wheel-progressive-speed nil)
 
-(fringe-mode '(2 . 2))
+;; (set-window-fringes (selected-window) 0 0 nil)
+(setq-default left-fringe-width 2)
+(setq-default right-fringe-width 2)
+(fringe-mode '2)
 
-(setq-default indicate-buffer-boundaries nil)
-(setq-default indicate-empty-lines nil)
+(global-visual-line-mode)
+
+(setq window-divider-default-bottom-width 0)
+
+(use-package msgu
+   :ensure (msgu :host "github.com" :repo "jcs-elpa/msgu"))
+
+(use-package elenv
+   :ensure (elenv :host "github.com" :repo "jcs-elpa/elenv"))
+
+(use-package auto-scroll-bar
+  :ensure (auto-scroll-bar :host "github.com" :repo "emacs-vs/auto-scroll-bar")
+  :config
+  (setq auto-scroll-bar-horizontal nil)
+  (auto-scroll-bar-mode))
+
+(use-package ansi-colorful
+   :ensure (ansi-colorful :host "github.com" :repo "jcs-elpa/ansi-colorful"))
+
+;; (setq-default indicate-buffer-boundaries nil)
+;; (setq-default indicate-empty-lines nil)
 
 (use-package general
   :ensure (:wait t)
@@ -45,14 +67,36 @@
 
 (set-face-attribute 'default nil :font "Berkeley Mono-10")
 
-(use-package doom-themes
-  :ensure t
-  :config
-  (load-theme 'doom-one t)
-  (doom-themes-org-config))
+;; (use-package doom-themes
+;;   :ensure t
+;;   :config
+;;   (load-theme 'doom-one t)
+;;   (doom-themes-org-config))
 
 ;; (use-package mood-line
   ;; :config (mood-line-mode))
+
+;; (use-package modus-themes
+;;   :ensure t
+;;   :config
+;;   ;; (require 'modus-themes)
+;;
+;;   ;; Add all your customizations prior to loading the themes
+;;   (setq modus-themes-italic-constructs t
+;;         modus-themes-bold-constructs nil)
+;;
+;;   ;; Load the theme of your choice.
+;;   (load-theme 'modus-operandi :no-confirm))
+
+;; (use-package nothing-theme
+;;   :ensure t
+;;   :config
+;;   (load-theme 'nothing t))
+
+(use-package almost-mono-themes
+  :ensure t
+  :config
+  (load-theme 'almost-mono-white t))
 
 (use-package minions
   :ensure t
