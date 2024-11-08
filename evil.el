@@ -9,16 +9,21 @@
 
 (use-package anzu
   :ensure t
-  :defer t
-  :hook (evil-mode . global-anzu-mode))
+  :defer nil)
 
-;; (use-package expreg
-  ;; :ensure (expreg :host github :repo "casouri/expreg")
-  ;; :defer t
-  ;; :general
-  ;; (:states '(normal visual)
-           ;; "C-a" #'expreg-expand
-           ;; "C-A" #'expreg-contract))
+(use-package evil-anzu
+  :ensure t
+  :defer nil
+  :config
+  (global-anzu-mode +1))
+
+(use-package expreg
+  :ensure (expreg :host github :repo "casouri/expreg")
+  :defer t
+  :general
+  (:states '(normal visual)
+           "C-SPC" #'expreg-expand
+           "C-S-SPC" #'expreg-contract))
 
 (defun +evil/shift-right ()
   "vnoremap < <gv"
@@ -41,21 +46,18 @@
   :hook (elpaca-after-init . evil-mode)
   :demand t
   :general
-  (:states 'motion
-           [C-i]   #'evil-jump-forward
+  (:states '(motion normal visual)
+           "s"     #'evil-avy-goto-char-timer
            "]a"    #'evil-forward-arg
            "[a"    #'evil-backward-arg
-           "]e"    #'flycheck-next-error
-           "[e"    #'flycheck-previous-error
+           "]e"    #'flymake-goto-next-error
+           "[e"    #'flymake-goto-previous-error
            "]h"    #'outline-next-visible-heading
-           "[h"    #'outline-previous-visible-heading)
+           "[h"    #'outline-previous-visible-heading
+           "C-e"   #'evil-beginning-of-line)
   (:states 'visual
            "<"     #'+evil/shift-left
            ">"     #'+evil/shift-right)
-  (:states 'normal
-           "s"     #'evil-avy-goto-char-timer)
-  (:states '(visual normal)
-           "C-e"   #'evil-beginning-of-line)
   (:states 'insert
            "C-h"   #'evil-backward-char
            "C-l"   #'evil-forward-char
@@ -134,6 +136,13 @@
   (advice-add #'evil-force-normal-state :after #'+evil-escape-a)
 
   (setq features (delq 'evil-ex features)))
+
+;; TODO: Add support for ts and angular
+;; (use-package evil-ts-obj
+;;   :ensure (evil-ts-obj :host github :repo "dvzubarev/evil-ts-obj")
+;;   :defer t
+;;   :hook
+;;   ((angular-ts-mode typescript-ts-mode) . evil-ts-obj-mode))
 
 (use-package evil-collection
   :ensure t

@@ -1,75 +1,5 @@
 ;;; lsp.el --- Configuration for language servers -*- no-byte-compile: t; lexical-binding: t; -*-
 
-(require 'comint)
-(require 'ansi-color)
-(require 'project)
-
-(defvar ng-project "angular-app"
-  "The Angular project name to use for `ng test`.")
-
-(defvar ng-karma-config-path nil
-  "The path to the Karma configuration file to use for `ng test`.")
-
-(defun +project-root ()
-  "Return the root directory of the current project as determined by `project.el`."
-  (let ((project (project-current)))
-    (if project
-        (file-name-as-directory (project-root project))
-      (error "Not in a project!"))))
-
-(defun ng-path ()
-  "Return the path to the Angular CLI executable `ng`."
-  (expand-file-name "node_modules/@angular/cli/bin/ng" (+project-root)))
-
-(defun run-ng-command (command buffer-name)
-  "Run the given COMMAND in a comint buffer named BUFFER-NAME."
-  (let* ((default-directory (+project-root))  ;; Ensure we are in the project root
-         (buffer (get-buffer-create buffer-name))
-         (comint-buffer (make-comint-in-buffer "Angular Test" buffer "bash" nil "-c" command)))
-    (switch-to-buffer buffer)
-    (with-current-buffer buffer
-      (comint-mode)
-      (add-hook 'comint-output-filter-functions 'ansi-color-process-output nil t)
-      (setq-local comint-scroll-to-bottom-on-output t))))
-
-(defun run-ng-test-project (&optional headless)
-  "Run `ng test` for the whole Angular project.
-If HEADLESS is non-nil, run tests in Chrome headless mode."
-  (interactive "P")  ;; Use "P" to pass the prefix argument interactively
-  (let ((ng-path (ng-path))
-        (karma-config-arg (if ng-karma-config-path
-                              (concat "--karma-config " ng-karma-config-path)
-                            ""))
-        (browsers-arg "--browsers=Chrome --watch"))
-    ;; Prepend the command with `node`
-    (run-ng-command (format "node %s test %s %s %s" ng-path ng-project karma-config-arg browsers-arg
-                               )
-                       "*Angular Test*")))
-
-(defun run-ng-test-file (&optional headless)
-  "Run `ng test` for the current file, targeting its corresponding `.spec.ts` file.
-If HEADLESS is non-nil, run tests in Chrome headless mode."
-  (interactive "P")  ;; Use "P" to pass the prefix argument interactively
-  (let* ((file (buffer-file-name))
-         (relative-file (file-relative-name file (+project-root)))
-         (spec-file (if (string-match-p "\\.spec\\.ts$" file)
-                        relative-file
-                      (replace-regexp-in-string "\\.ts$" ".spec.ts" relative-file)))
-         (ng-path (ng-path))
-         (karma-config-arg (if ng-karma-config-path
-                               (concat "--karma-config " ng-karma-config-path)
-                             ""))
-         (browsers-arg "--browsers=Chrome --watch"))
-    ;; Prepend the command with `node`
-    (run-ng-command (format "node %s test %s --include=%s %s %s" ng-path ng-project spec-file karma-config-arg browsers-arg
-                               )
-                       "*Angular Test - Current File*")))
-
-
-(setq ng-project "location")
-(setq ng-karma-config-path "./apps/location/karma.conf.js")
-
-
 (require 'treesit)
 
 (define-derived-mode angular-ts-mode html-ts-mode "Angular"
@@ -114,7 +44,7 @@ If HEADLESS is non-nil, run tests in Chrome headless mode."
            :repo "JordanAnthonyKing/treesit-langs"
            :files ("treesit-*.el" "queries"))
   :defer t
-  ;; :hook ((angular-ts-mode typescript-ts-mode) . treesit-hl-toggle)
+  :hook ((angular-ts-mode typescript-ts-mode) . treesit-hl-toggle)
   :custom
   (treesit-langs-git-dir nil)
   (treesit-langs-grammar-dir (expand-file-name "tree-sitter" user-emacs-directory))
@@ -327,12 +257,12 @@ If HEADLESS is non-nil, run tests in Chrome headless mode."
             "C-SPC" #'completion-at-point
             "C-n" #'corfu-next
             "C-p" #'corfu-previous)
-  (:keymaps 'corfu-mode-map
-            :states 'normal
-            "C-SPC" (lambda ()
-                      (interactive)
-                      (call-interactively #'evil-insert-state)
-                      (call-interactively #'completion-at-point)))
+  ;; (:keymaps 'corfu-mode-map
+  ;;           :states 'normal
+  ;;           "C-SPC" (lambda ()
+  ;;                     (interactive)
+  ;;                     (call-interactively #'evil-insert-state)
+  ;;                     (call-interactively #'completion-at-point)))
   (:keymaps 'corfu-map
             "C-k" #'corfu-previous
             "C-j" #'corfu-next
