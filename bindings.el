@@ -153,7 +153,7 @@ all hooks after it are ignored.")
   "a i a" #'gptel-add
   "a i A" #'gptel-add-file
   "a i m" #'gptel-menu
-  "a i c" #'gptel
+  "a i c" '(lambda () (gptel "ChatGPT"))
 
   "b" '(:ignore t :which-key "buffers")
   "b b" #'consult-buffer
@@ -199,6 +199,7 @@ all hooks after it are ignored.")
   "c t" #'eglot-find-typeDefinition
   "c n" #'flymake-goto-next-error
   "c p" #'flymake-goto-prev-error
+  "c l" #'consult-flymake
   "c f" #'eglot-format
 
   "f" '(:ignore t :which-key "files")
@@ -232,6 +233,8 @@ all hooks after it are ignored.")
   "g L"   #'magit-log-buffer-file
   "g S"   #'magit-stage-buffer-file
   "g U"   #'magit-unstage-buffer-file
+  "g n"   #'smerge-next
+  "g p"   #'smerge-prev
 
   "g f" '(:ignore t :which-key "find")
   "g f f"   #'magit-find-file
