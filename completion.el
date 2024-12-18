@@ -72,7 +72,7 @@
   (add-to-list 'vertico-multiform-commands
                '(execute-extended-command
                  (+vertico-transform-functions . +vertico-highlight-enabled-mode))))
-  
+
 (use-package consult
   :ensure t
   :defer t
@@ -141,17 +141,26 @@
    "C-;" #'embark-act)
   (:keymaps  'minibuffer-local-map
              "C-;" #'embark-act
+             "M-;" #'embark-dwim
              "C-c C-;" #'embark-export
              "C-c C-l" #'embark-collect)
+  ;; :init
+  ;; (setq which-key-use-C-h-commands nil
+  ;;       prefix-help-command #'embark-prefix-help-command)
   :init
-  (setq which-key-use-C-h-commands nil
-        prefix-help-command #'embark-prefix-help-command)
-  :init
-  (setq prefix-help-command #'embark-prefix-help-command))
+  (setq prefix-help-command #'embark-prefix-help-command)
+  :config
+  (keymap-set embark-general-map "s" #'consult-ripgrep)
+  )
   
+;; Consult users will also want the embark-consult package.
 (use-package embark-consult
-  :ensure t
-  :hook (embark-collect-mode . consult-preview-at-point-mode))
+  :ensure t ; only need to install it, embark loads it after consult if found
+  :defer nil
+  :hook
+  (embark-collect-mode . consult-preview-at-point-mode))
+;; TODO
+;; (use-package consule-eglot-embark)
 
 (use-package marginalia
   :ensure t
