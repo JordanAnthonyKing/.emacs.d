@@ -298,10 +298,13 @@ When set to non-nil, Emacs will automatically call `package-initialize' and
 (setq package-archives '(("melpa" . "https://melpa.org/packages/")
                          ("melpa-stable" . "https://stable.melpa.org/packages/")
                          ("gnu" . "https://elpa.gnu.org/packages/")
-                         ("nongnu" . "https://elpa.nongnu.org/nongnu/")))
+                         ("nongnu" . "https://elpa.nongnu.org/nongnu/")
+                         ("jcs-elpa" . "https://jcs-emacs.github.io/jcs-elpa/packages/")
+                         ))
 (customize-set-variable 'package-archive-priorities '(("gnu"    . 99)
                                                       ("nongnu" . 80)
                                                       ("stable" . 70)
+                                                      ("jcs-elpa" . 10)
                                                       ("melpa"  . 0)))
 
 ;;; Load post-early-init.el
