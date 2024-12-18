@@ -9,28 +9,13 @@
 
 (use-package anzu
   :ensure t
-  :defer nil)
+  :defer t)
 
 (use-package evil-anzu
   :ensure t
   :defer nil
   :config
   (global-anzu-mode +1))
-
-(use-package expreg
-  :ensure (expreg :host github :repo "casouri/expreg")
-  :defer t
-  :general
-  (:states '(normal visual)
-           "C-SPC" #'expreg-expand
-           "C-S-SPC" #'expreg-contract))
-
-(defun +evil/shift-right ()
-  "vnoremap < <gv"
-  (interactive)
-  (call-interactively #'evil-shift-right)
-  (evil-normal-state)
-  (evil-visual-restore))
 
 (defun +evil/shift-left ()
   "vnoremap > >gv"
@@ -39,7 +24,61 @@
   (evil-normal-state)
   (evil-visual-restore))
 
-(setq evil-want-keybinding nil)
+(define-minor-mode undo-fu-mode
+    "Enables `undo-fu' for the current session."
+    :keymap (let ((map (make-sparse-keymap)))
+              (define-key map [remap undo] #'undo-fu-only-undo)
+              (define-key map [remap redo] #'undo-fu-only-redo)
+              (define-key map (kbd "C-_")     #'undo-fu-only-undo)
+              (define-key map (kbd "M-_")     #'undo-fu-only-redo)
+              (define-key map (kbd "C-M-_")   #'undo-fu-only-redo-all)
+              (define-key map (kbd "C-x r u") #'undo-fu-session-save)
+              (define-key map (kbd "C-x r U") #'undo-fu-session-recover)
+              map)
+    :init-value nil
+    :global t)
+
+;; (use-package undo-fu
+;;   :ensure t
+;;   :hook (elpaca-after-init . undo-fu-mode)
+;;   :config
+;;   (setq undo-limit 400000
+;;         undo-strong-limit 3000000
+;;         undo-outer-limit 48000000))
+;; 
+;; (use-package undo-fu-session
+;;   :ensure t
+;;   :hook (undo-fu-mode . global-undo-fu-session-mode)
+;;   :config
+;;   (setq undo-fu-session-incompatible-files '("\\.gpg$" "/COMMIT_EDITMSG\\'" "/git-rebase-todo\\'")))
+
+(use-package vundo
+  :ensure t
+  :commands vundo
+  :config
+  (setq vundo-glyph-alist vundo-unicode-symbols
+        ;; vundo-compact-display t
+        vundo-compact-display nil)
+  (define-key vundo-mode-map [remap doom/escape] #'vundo-quit))
+
+(use-package expreg
+  :ensure (expreg :host github :repo "casouri/expreg")
+  :defer t
+  :general
+  ;; TODO: Change this to work on v in v 
+  (:states '(visual)
+           "v" #'expreg-expand
+           "V" #'expreg-contract))
+
+(defun +evil/shift-right ()
+  "vnoremap < <gv"
+  (interactive)
+  (call-interactively #'evil-shift-right)
+  (evil-normal-state)
+  (evil-visual-restore))
+
+(setq evil-want-integration t
+      evil-want-keybinding nil)
 (use-package evil
   :ensure (:wait t)
   :defer t
@@ -59,44 +98,36 @@
            "<"     #'+evil/shift-left
            ">"     #'+evil/shift-right)
   (:states 'insert
+           ;; TODO: These probably don't need to be the evil versions
            "C-h"   #'evil-backward-char
            "C-l"   #'evil-forward-char
-           "C-j"   #'evil-next-line
-           "C-k"   #'evil-previous-char)
+           ;; Conflict with corfu
+           ;; "C-j"   #'evil-next-line
+           ;; "C-k"   #'evil-previous-char
+           )
   (:keymaps 'evil-window-map
             "d" #'evil-window-delete)
-  :preface
-  (setq evil-search-module 'evil-search ;; TODO: investigate isearch without regex
+  :custom
+  (evil-undo-system 'undo-redo)
+  :init
+  (setq evil-undo-system 'undo-fu
+        evil-ex-search-vim-style-regexp t
+        evil-mode-line-format 'nil
+        evil-search-module 'evil-search ;; TODO: investigate isearch without regex
         evil-ex-visual-char-range t
         evil-symbol-word-search t
         evil-visual-state-cursor 'hollow
         evil-ex-interactive-search-highlight 'selected-window
         evil-kbd-macros-suppress-motion-error t
-        evil-disable-insert-state-bindings t
-        evil-undo-system 'undo-redo)
-
+        evil-disable-insert-state-bindings t)
   :config
+  ;; (setq evil-undo-system 'undo-fu)
+  (evil-select-search-module 'evil-search-module 'evil-search)
+  (setq evil-visual-update-x-selection-p nil)
+
   (add-hook 'after-change-major-mode-hook
             (lambda ()
               (setq-local evil-shift-width tab-width)))
-
-  (evil-define-operator +evil-delete (beg end type register yank-handler)
-    "A wrapper around `evil-delete' for `wgrep' buffers that will invoke
-`wgrep-mark-deletion' on lines you try to delete."
-    (interactive "<R><x><y>")
-    (condition-case _ex
-        (evil-delete beg end type register yank-handler)
-      ('text-read-only
-       (evil-apply-on-block
-        (lambda (beg _)
-          (goto-char beg)
-          (call-interactively #'wgrep-mark-deletion))
-        beg (1- end) nil))))
-
-  (with-eval-after-load 'wgrep
-    ;; A wrapper that invokes `wgrep-mark-deletion' across lines you use
-    ;; `evil-delete' in wgrep buffers.
-    (define-key wgrep-mode-map [remap evil-delete] #'+evil-delete))
 
   (defun +evil-disable-ex-highlights-h ()
     "Disable ex search buffer highlights."
