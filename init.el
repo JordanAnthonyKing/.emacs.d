@@ -4,18 +4,24 @@
 ;; URL: https://github.com/jamescherti/minimal-emacs.d
 ;; Package-Requires: ((emacs "29.1"))
 ;; Keywords: maint
-;; Version: 1.1.0
+;; Version: 1.1.1
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
-;; The minimal-emacs.d starter kit provides improved Emacs defaults and
-;; optimized startup, intended to serve as a solid foundation for your vanilla
-;; Emacs configuration and enhance your overall Emacs experience.
+;; The minimal-emacs.d project is a customizable base that provides better Emacs
+;; defaults and optimized startup, intended to serve as a solid foundation for
+;; your vanilla Emacs configuration.
+>>>>>>> upstream/main
 
 ;;; Code:
 
 ;;; Load pre-init.el
 (minimal-emacs-load-user-init "pre-init.el")
+
+;;; Networking
+
+;; Don't ping things that look like domain names.
+(setq ffap-machine-p-known 'reject)
 
 ;;; package.el
 (when (bound-and-true-p minimal-emacs-package-initialize-and-refresh)
@@ -34,6 +40,22 @@
 
 ;; Ensure the 'use-package' package is installed and loaded
 
+;;; Features, warnings, and errors
+
+;; Disable warnings from the legacy advice API. They aren't useful.
+(setq ad-redefinition-action 'accept)
+
+(setq warning-suppress-types '((lexical-binding)))
+
+;; Some features that are not represented as packages can be found in
+;; `features', but this can be inconsistent. The following enforce consistency:
+(if (fboundp #'json-parse-string)
+    (push 'jansson features))
+(if (string-match-p "HARFBUZZ" system-configuration-features) ; no alternative
+    (push 'harfbuzz features))
+(if (bound-and-true-p module-file-suffix)
+    (push 'dynamic-modules features))
+
 ;;; Minibuffer
 ;; Allow nested minibuffers
 (setq enable-recursive-minibuffers t)
@@ -43,6 +65,17 @@
       '(read-only t intangible t cursor-intangible t face
                   minibuffer-prompt))
 (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
+
+;;; User interface
+
+;; By default, Emacs "updates" its ui more often than it needs to
+(setq idle-update-delay 1.0)
+
+;; Allow for shorter responses: "y" for yes and "n" for no.
+(if (boundp 'use-short-answers)
+    (setq use-short-answers t)
+  (advice-add #'yes-or-no-p :override #'y-or-n-p))
+(defalias #'view-hello-file #'ignore)  ; Never show the hello file
 
 ;;; Misc
 
@@ -82,11 +115,20 @@
 ;; (setq truncate-string-ellipsis "…")
 (setq truncate-string-ellipsis "...")
 
-;; Configure Emacs to ask for confirmation before exiting
-(setq confirm-kill-emacs 'y-or-n-p)
-
 ;; Delete by moving to trash in interactive mode
 (setq delete-by-moving-to-trash (not noninteractive))
+
+;; Increase how much is read from processes in a single chunk
+(setq read-process-output-max (* 512 1024))  ; 512kb
+
+;; Collects and displays all available documentation immediately, even if
+;; multiple sources provide it. It concatenates the results.
+(setq eldoc-documentation-strategy 'eldoc-documentation-compose-eagerly)
+
+;; For some reason, `abbrev_defs` is located in ~/.emacs.d/abbrev_defs, even
+;; when `user-emacs-directory` is modified. This ensures the abbrev file is
+;; correctly located based on the updated `user-emacs-directory`.
+(setq abbrev-file-name (expand-file-name "abbrev_defs" user-emacs-directory))
 
 ;;; Files
 
@@ -117,8 +159,6 @@
 (setq window-divider-default-bottom-width 1
       window-divider-default-places t
       window-divider-default-right-width 1)
-
-(add-hook 'after-init-hook #'window-divider-mode)
 
 ;;; Backup files
 
@@ -215,35 +255,37 @@
 ;; window.
 (setq scroll-preserve-screen-position t)
 
-;;; Mouse
+;; Emacs spends excessive time recentering the screen when the cursor moves more
+;; than N lines past the window edges (where N is the value of
+;; `scroll-conservatively`). This can be particularly slow in larger files
+;; during extensive scrolling. If `scroll-conservatively` is set above 100, the
+;; window is never automatically recentered. The default value of 0 triggers
+;; recentering too aggressively. Setting it to 10 reduces excessive recentering
+;; and only recenters the window when scrolling significantly off-screen.
+(setq scroll-conservatively 10)
+
+;; Enables smooth scrolling by making Emacs scroll the window by 1 line whenever
+;; the cursor moves off the visible screen.
+(setq scroll-step 1)
+
+;; Reduce cursor lag by :
+;; 1. Prevent automatic adjustments to `window-vscroll' for long lines.
+;; 2. Resolve the issue of random half-screen jumps during scrolling.
+(setq auto-window-vscroll nil)
+
+;; Number of lines of margin at the top and bottom of a window.
+(setq scroll-margin 0)
+
+;; Horizontal scrolling
+(setq hscroll-margin 2
+      hscroll-step 1)
+
+;;; Mouse Scroll
 
 ;; Emacs 29
 (when (memq 'context-menu minimal-emacs-ui-features)
   (when (and (display-graphic-p) (fboundp 'context-menu-mode))
     (add-hook 'after-init-hook #'context-menu-mode)))
-
-(setq hscroll-margin 2
-      hscroll-step 1
-      ;; Emacs spends excessive time recentering the screen when the cursor
-      ;; moves more than N lines past the window edges (where N is the value of
-      ;; `scroll-conservatively`). This can be particularly slow in larger files
-      ;; during extensive scrolling. If `scroll-conservatively` is set above
-      ;; 100, the window is never automatically recentered. The default value of
-      ;; 0 triggers recentering too aggressively. Setting it to 10 reduces
-      ;; excessive recentering and only recenters the window when scrolling
-      ;; significantly off-screen.
-      scroll-conservatively 10
-      ;; TODO: Change me
-      scroll-margin 0
-      scroll-preserve-screen-position t
-      ;; Reduce cursor lag by preventing automatic adjustments to
-      ;; `window-vscroll' for unusually long lines. Setting
-      ;; `auto-window-vscroll' it to nil also resolves the issue of random
-      ;; half-screen jumps during scrolling.
-      auto-window-vscroll nil
-      ;; Mouse
-      mouse-wheel-scroll-amount '(1 ((shift) . hscroll))
-      mouse-wheel-scroll-amount-horizontal 1)
 
 ;;; Cursor
 ;; The blinking cursor is distracting and interferes with cursor settings in
@@ -258,6 +300,11 @@
 ;; Don't stretch the cursor to fit wide characters, it is disorienting,
 ;; especially for tabs.
 (setq x-stretch-cursor nil)
+
+;; Reduce rendering/line scan work by not rendering cursors or regions in
+;; non-focused windows.
+(setq-default cursor-in-non-selected-windows nil)
+(setq highlight-nonselected-windows nil)
 
 ;;; Annoyances
 
@@ -343,7 +390,12 @@
 
 (setq sh-indent-after-continuation 'always)
 
-(setq dired-clean-confirm-killing-deleted-buffers nil
+;;; Dired
+
+(setq dired-free-space nil
+      dired-deletion-confirmer 'y-or-n-p
+      dired-filter-verbose nil
+      dired-clean-confirm-killing-deleted-buffers nil
       dired-recursive-deletes 'top
       dired-recursive-copies  'always
       dired-create-destination-dirs 'ask)
