@@ -106,8 +106,10 @@
 (setq rainbow-delimiters-max-face-count 5)
 
 ;; Can be activated with `display-line-numbers-mode'
-(setq-default display-line-numbers-width 3)
-(setq-default display-line-numbers-widen t)
+(setq-default display-line-numbers-width 2)
+(setq-default display-line-numbers-widen nil)
+;; (setq-default display-line-numbers-width 3)
+;; (setq-default display-line-numbers-widen t)
 
 (setq truncate-string-ellipsis "…")
 
@@ -141,6 +143,7 @@
       vc-follow-symlinks t)
 
 ;; Prefer vertical splits over horizontal ones
+;; TODO: Investigate
 (setq split-width-threshold 170
       split-height-threshold nil)
 
@@ -336,8 +339,8 @@
 ;; after each deletion, disrupting the flow of editing.
 (setq delete-pair-blink-delay 0.03)
 
-(setq-default left-fringe-width  8)
-(setq-default right-fringe-width 8)
+;; (setq-default left-fringe-width  8)
+;; (setq-default right-fringe-width 8)
 
 ;; Do not show an arrow at the top/bottomin the fringe and empty lines
 (setq-default indicate-buffer-boundaries nil)
@@ -345,7 +348,7 @@
 
 ;; Continue wrapped lines at whitespace rather than breaking in the
 ;; middle of a word.
-(setq-default word-wrap t)
+;; (setq-default word-wrap t)
 
 ;; Disable wrapping by default due to its performance cost.
 (setq-default truncate-lines t)
@@ -401,8 +404,8 @@
 (setq display-time-default-load-average nil)
 
 ;; Display the current line and column numbers in the mode line
-(setq line-number-mode t)
-(setq column-number-mode t)
+;; (setq line-number-mode t)
+;; (setq column-number-mode t)
 
 ;;; Filetype
 

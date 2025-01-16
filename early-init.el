@@ -266,8 +266,8 @@ minimalistic appearance during startup.")
 
 ;;; UI elements
 
-(setq frame-title-format minimal-emacs-frame-title-format
-      icon-title-format minimal-emacs-frame-title-format)
+;; (setq frame-title-format minimal-emacs-frame-title-format
+;;       icon-title-format minimal-emacs-frame-title-format)
 
 ;; Disable startup screens and messages
 (setq inhibit-splash-screen t)
