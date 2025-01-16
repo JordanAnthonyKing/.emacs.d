@@ -47,7 +47,7 @@
 ;;; Misc
 
 ;; switch-to-buffer runs pop-to-buffer-same-window instead
-(setq switch-to-buffer-obey-display-actions t)
+;; (setq switch-to-buffer-obey-display-actions t)
 
 (setq show-paren-delay 0.1
       show-paren-highlight-openparen t
@@ -63,17 +63,24 @@
 (setq rainbow-delimiters-max-face-count 5)
 
 ;; Can be activated with `display-line-numbers-mode'
-(setq-default display-line-numbers-width 3)
-(setq-default display-line-numbers-widen t)
+(setq-default display-line-numbers-width 2)
+(setq-default display-line-numbers-widen nil)
+;; (setq-default display-line-numbers-width 3)
+;; (setq-default display-line-numbers-widen t)
 
 (setq comint-prompt-read-only t)
 (setq comint-buffer-maximum-size 2048)
 
-(setq compilation-always-kill t
-      compilation-ask-about-save nil
-      compilation-scroll-output 'first-error)
+;; (setq compilation-always-kill t
+;;       compilation-ask-about-save nil
+;;       compilation-scroll-output 'first-error)
 
-(setq truncate-string-ellipsis "…")
+(setq compilation-always-kill nil
+      compilation-ask-about-save nil
+      compilation-scroll-output t)
+
+;; (setq truncate-string-ellipsis "…")
+(setq truncate-string-ellipsis "...")
 
 ;; Configure Emacs to ask for confirmation before exiting
 (setq confirm-kill-emacs 'y-or-n-p)
@@ -93,13 +100,15 @@
       vc-follow-symlinks t)
 
 ;; Skip confirmation prompts when creating a new file or buffer
-(setq confirm-nonexistent-file-or-buffer nil)
+;; (setq confirm-nonexistent-file-or-buffer nil)
+(setq confirm-nonexistent-file-or-buffer t)
 
 (setq uniquify-buffer-name-style 'forward)
 
 (setq mouse-yank-at-point t)
 
 ;; Prefer vertical splits over horizontal ones
+;; TODO: Investigate
 (setq split-width-threshold 170
       split-height-threshold nil)
 
@@ -224,6 +233,7 @@
       ;; excessive recentering and only recenters the window when scrolling
       ;; significantly off-screen.
       scroll-conservatively 10
+      ;; TODO: Change me
       scroll-margin 0
       scroll-preserve-screen-position t
       ;; Reduce cursor lag by preventing automatic adjustments to
@@ -261,8 +271,8 @@
 (setq delete-pair-blink-delay 0.03)
 
 ;;; Indent and formatting
-(setq-default left-fringe-width  8)
-(setq-default right-fringe-width 8)
+;; (setq-default left-fringe-width  8)
+;; (setq-default right-fringe-width 8)
 
 ;; Do not show an arrow at the top/bottomin the fringe and empty lines
 (setq-default indicate-buffer-boundaries nil)
@@ -270,7 +280,7 @@
 
 ;; Continue wrapped lines at whitespace rather than breaking in the
 ;; middle of a word.
-(setq-default word-wrap t)
+;; (setq-default word-wrap t)
 
 ;; Disable wrapping by default due to its performance cost.
 (setq-default truncate-lines t)
@@ -323,8 +333,8 @@
 (setq display-time-default-load-average nil)
 
 ;; Display the current line and column numbers in the mode line
-(setq line-number-mode t)
-(setq column-number-mode t)
+;; (setq line-number-mode t)
+;; (setq column-number-mode t)
 
 ;;; Filetype
 

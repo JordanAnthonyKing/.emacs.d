@@ -239,8 +239,8 @@ When set to non-nil, Emacs will automatically call `package-initialize' and
 
 ;;; UI elements
 
-(setq frame-title-format minimal-emacs-frame-title-format
-      icon-title-format minimal-emacs-frame-title-format)
+;; (setq frame-title-format minimal-emacs-frame-title-format
+;;       icon-title-format minimal-emacs-frame-title-format)
 
 ;; Disable startup screens and messages
 (setq inhibit-splash-screen t)
