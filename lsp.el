@@ -2,33 +2,43 @@
 
 (setq text-mode-ispell-word-completion nil) ;; WTF
 (setq treesit-font-lock-level 5)
-;; (setq display-line-numbers 'relative)
+
+(setq display-line-numbers-current-absolute nil)
+(setq display-line-numbers-type 'relative)
 (add-hook 'prog-mode-hook #'display-line-numbers-mode)
 
-(defmacro debounce! (func &optional delay)
-  "Return a debounced version of function FUNC.
+;; (defalias 'forward-evil-word 'forward-evil-symbol)
 
-DELAY defaults to 0.5 seconds."
-  `(let ((debounce-timer nil)
-         (delay (or ,delay 0.5)))
-     (defun ,(intern (concat (symbol-name func) "--debounced")) (&rest args)
-       ;; Add the documentation from FUNC with an extra note
-       ,(concat
-         (documentation func)
-         (format "\n\nThis function is debounced -- it runs after a delay of %.3f seconds." delay))
-       ;; Add the interactive form from FUNC
-       ,(interactive-form func)
-       (if (timerp debounce-timer)
-           (timer-set-idle-time debounce-timer delay)
-         (let ((buf (current-buffer)))
-           (setq debounce-timer
-                 (run-with-idle-timer
-                  delay nil
-                  (lambda ()
-                    (cancel-timer debounce-timer)
-                    (setq debounce-timer nil)
-                    (with-current-buffer buf
-                      (apply #',func args))))))))))
+;; (use-package prog-mode
+;;   :ensure nil
+;;   :general
+;;   (:states '(normal visual operator)
+;;            "w" #'forward-evil-symbol))
+
+;; (defmacro debounce! (func &optional delay)
+;;   "Return a debounced version of function FUNC.
+;; 
+;; DELAY defaults to 0.5 seconds."
+;;   `(let ((debounce-timer nil)
+;;          (delay (or ,delay 0.5)))
+;;      (defun ,(intern (concat (symbol-name func) "--debounced")) (&rest args)
+;;        ;; Add the documentation from FUNC with an extra note
+;;        ,(concat
+;;          (documentation func)
+;;          (format "\n\nThis function is debounced -- it runs after a delay of %.3f seconds." delay))
+;;        ;; Add the interactive form from FUNC
+;;        ,(interactive-form func)
+;;        (if (timerp debounce-timer)
+;;            (timer-set-idle-time debounce-timer delay)
+;;          (let ((buf (current-buffer)))
+;;            (setq debounce-timer
+;;                  (run-with-idle-timer
+;;                   delay nil
+;;                   (lambda ()
+;;                     (cancel-timer debounce-timer)
+;;                     (setq debounce-timer nil)
+;;                     (with-current-buffer buf
+;;                       (apply #',func args))))))))))
 
 (require 'treesit)
 
@@ -39,33 +49,33 @@ DELAY defaults to 0.5 seconds."
   :safe 'integerp
   :group 'angular)
 
-(defun my/find-symbol-in-sibling-file ()
-  "Search for the symbol under point in the sibling file determined by 'find-sibling-file'.
-If the sibling file isn't open, open it without focusing on it. Display matches using completing-read for filtering."
-  (interactive)
-  (let* ((symbol (thing-at-point 'symbol t))
-         (current-file (buffer-file-name))
-         (sibling-file (when current-file
-                         (find-sibling-file current-file)))
-         (buffer (and sibling-file
-                      (or (get-file-buffer sibling-file)
-                          (find-file-noselect sibling-file))))
-         (matches nil))
-    (if (null symbol)
-        (message "No symbol under point.")
-      (if (null sibling-file)
-          (message "No sibling file found.")
-        (with-current-buffer buffer
-          (goto-char (point-min))
-          (while (search-forward symbol nil t)
-            (let ((line-content (buffer-substring-no-properties
-                                 (line-beginning-position)
-                                 (line-end-position))))
-              (push line-content matches))))
-        (if matches
-            (let ((selected (completing-read "Matches: " matches)))
-              (message "You selected: %s" selected))
-          (message "No matches found for symbol '%s' in sibling file." symbol))))))
+;; (defun my/find-symbol-in-sibling-file ()
+;;   "Search for the symbol under point in the sibling file determined by 'find-sibling-file'.
+;; If the sibling file isn't open, open it without focusing on it. Display matches using completing-read for filtering."
+;;   (interactive)
+;;   (let* ((symbol (thing-at-point 'symbol t))
+;;          (current-file (buffer-file-name))
+;;          (sibling-file (when current-file
+;;                          (find-sibling-file current-file)))
+;;          (buffer (and sibling-file
+;;                       (or (get-file-buffer sibling-file)
+;;                           (find-file-noselect sibling-file))))
+;;          (matches nil))
+;;     (if (null symbol)
+;;         (message "No symbol under point.")
+;;       (if (null sibling-file)
+;;           (message "No sibling file found.")
+;;         (with-current-buffer buffer
+;;           (goto-char (point-min))
+;;           (while (search-forward symbol nil t)
+;;             (let ((line-content (buffer-substring-no-properties
+;;                                  (line-beginning-position)
+;;                                  (line-end-position))))
+;;               (push line-content matches))))
+;;         (if matches
+;;             (let ((selected (completing-read "Matches: " matches)))
+;;               (message "You selected: %s" selected))
+;;           (message "No matches found for symbol '%s' in sibling file." symbol))))))
 
 ;; TODO: Update me
 (defvar angular-ts-mode--indent-rules
@@ -105,23 +115,25 @@ If the sibling file isn't open, open it without focusing on it. Display matches 
     ;; (modify-syntax-entry ?> " " table)
     (modify-syntax-entry ?: "_" table)
     (modify-syntax-entry ?_ "_" table)
-    (modify-syntax-entry ?. " " table) table))
+    (modify-syntax-entry ?. " " table)
+    table))
 
+;;;###autoload
 (define-derived-mode angular-ts-mode html-ts-mode "Angular"
   "Major mode for editing Angular flavoured HTML, powered by tree-sitter."
   :group 'angular
   :syntax-table angular-syntax-table
   (setq-local treesit-simple-indent-rules angular-ts-mode--indent-rules)
 
-  (add-to-list 'find-sibling-rules
-               '("\\(.+\\)\\.component.html\\'" "\\1.component.ts"))
-  (add-to-list 'find-sibling-rules
-               '("\\(.+\\)\\.container.html\\'" "\\1.container.ts")))
+  (when (treesit-ready-p 'angular)
+    (add-to-list 'auto-mode-alist '("\\.component.html" . angular-ts-mode))
+    (add-to-list 'auto-mode-alist '("\\.container.html" . angular-ts-mode)))
 
+  (add-to-list 'find-sibling-rules
+               '("\\(.+\\)\\.component.html" "\\1.component.ts"))
+  (add-to-list 'find-sibling-rules
+               '("\\(.+\\)\\.container.html" "\\1.container.ts")))
 
-(when (treesit-ready-p 'angular)
-  (add-to-list 'auto-mode-alist '("\\.component.html\\'" . angular-ts-mode))
-  (add-to-list 'auto-mode-alist '("\\.container.html\\'" . angular-ts-mode)))
 
 (provide 'angular-ts-mode)
 
@@ -136,7 +148,6 @@ If the sibling file isn't open, open it without focusing on it. Display matches 
     ;; (setq dabbrev-abbrev-char-regexp "\\(\\sw\\|\\s_\\)")
   )
 
-
 (use-package typescript-ts-mode
   :ensure nil
   :defer t
@@ -145,16 +156,13 @@ If the sibling file isn't open, open it without focusing on it. Display matches 
   (add-to-list 'find-sibling-rules
                '("\\(.+\\)\\.component\\.ts\\'" "\\1.component.html"))
   (add-to-list 'find-sibling-rules
-               '("\\(.+\\)\\.component\\.ts\\'" "\\1.component.spec.ts"))
+               '("\\(.+\\)\\.ts\\'" "\\1.spec.ts"))
   (add-to-list 'find-sibling-rules
                '("\\(.+\\)\\.container\\.ts\\'" "\\1.container.html"))
   (add-to-list 'find-sibling-rules
-               '("\\(.+\\)\\.container\\.spec\\.ts\\'" "\\1.container.ts"))
-  (add-to-list 'find-sibling-rules
-               '("\\(.+\\)\\.component\\.spec\\.ts\\'" "\\1.component.ts"))
+               '("\\(.+\\)\\.spec\\.ts\\'" "\\1.ts"))
 
   (add-to-list 'compilation-error-regexp-alist 'node)
-
   (add-to-list 'compilation-error-regexp-alist-alist
                '(node "at [^ ]+ (\\(.+?\\):\\([[:digit:]]+\\):\\([[:digit:]]+\\)" 1 2 3)))
 
@@ -174,11 +182,14 @@ If the sibling file isn't open, open it without focusing on it. Display matches 
   (add-hook 'angular-ts-mode-hook #'(lambda () (treesit-hl-toggle 'on)))
   (add-hook 'typescript-ts-mode-hook #'(lambda () (treesit-hl-toggle 'on))))
 
+;; TODO: Add stupid test folders
 (setq project-vc-ignores '("target/" "bin/" "obj/" "node_modules/")
       project-vc-extra-root-markers '(".project" "go.mod" "Cargo.toml"
                                       "project.clj" "pom.xml" "package.json"
                                       "angular.json" "Makefile" "README.org"
                                       "README.md"))
+(use-package markdown-mode
+  :ensure t)
 
 (use-package eglot
   :ensure nil
@@ -189,8 +200,11 @@ If the sibling file isn't open, open it without focusing on it. Display matches 
   (setq eglot-sync-connect 1
         eglot-autoshutdown t
         eglot-auto-display-help-buffer nil)
-
   :config
+  ;; (add-to-list 'eglot-server-programs
+  ;;              '(angular-ts-mode . ,(eglot-alternatives
+  ;;                                   '(("vscode-html-language-server" "--stdio")
+  ;;                                     ("html-languageserver" "--stdio")))))
   ;; (setq eglot-stay-out-of '(xref))
   (cl-callf plist-put eglot-events-buffer-config :size 0))
 
@@ -199,6 +213,15 @@ If the sibling file isn't open, open it without focusing on it. Display matches 
   :ensure t
   :commands consult-eglot-symbols
   :defer t)
+
+;; TODO: Replace with js-pkg
+
+(use-package js-pkg-mode
+  :ensure (js-pkg-mode :host "github.com" :repo "https://github.com/ovistoica/js-pkg-mode")
+  ;; TODO: Defer this
+  :init (js-pkg-global-mode 1))
+
+(add-hook 'compilation-mode-hook '(lambda () (setq toggle-truncate-lines nil)))
 
 (use-package npm
   :ensure t
@@ -220,17 +243,23 @@ If the sibling file isn't open, open it without focusing on it. Display matches 
                              (setq-local compilation-error-regexp-alist (list 'angular-warning 'angular-error))))
   ;; (add-hook 'npm-mode-hook (lambda () (visual-line-mode t)))
   (add-hook 'npm-mode-hook (lambda () (toggle-truncate-lines nil)))
-  (add-hook 'npm-mode-hook 'ansi-colorful-mode)
-  (defun ansi-enable-disable ()
-    (progn
-      (ansi-colorful--disable)
-      (ansi-colorful--enable)))
-  (debounce! ansi-enable-disable 0.2)
-  (add-hook 'compilation-filter-hook #'ansi-enable-disable)
+  ;; (add-hook 'npm-mode-hook 'ansi-colorful-mode)
+  ;; (defun ansi-enable-disable ()
+  ;;   (progn
+  ;;     (ansi-colorful--disable)
+  ;;     (ansi-colorful--enable)))
+  ;; (debounce! ansi-enable-disable 0.2)
+  ;; (add-hook 'compilation-filter-hook #'ansi-enable-disable)
   (advice-add 'npm-common--compile :around
               (lambda (orig-fun &rest args)
                 (let ((default-directory (project-root (project-current t))))
                   (apply orig-fun args)))))
+
+;; (use-package fancy-compilation
+;;   :commands (fancy-compilation-mode))
+;; 
+;; (with-eval-after-load 'compile
+;;   (fancy-compilation-mode))
 
 (use-package flymake
   :ensure nil
@@ -239,58 +268,63 @@ If the sibling file isn't open, open it without focusing on it. Display matches 
   :config
   ;; (setq flymake-show-diagnostics-at-end-of-line 'short)
 
+  (setq flymake-indicator-type 'margins)
+  (setq flymake-margin-indicator-position 'right-margin)
+  
   ;; This works but the advice method doesn't
-  (defun flymake-diagnostic-oneliner (diag &optional nopaintp)
-    "Get truncated one-line text string for diagnostic DIAG.
-This is useful for displaying the DIAG's text to the user in
-confined spaces, such as the echo area.  Unless NOPAINTP is t,
-propertize returned text with the `echo-face' property of DIAG's
-type."
-    (let* ((txt (flymake-diagnostic-text diag))
-           ;; Remove leading 'typescript [####]: ' if present
-           (txt (if (string-match "^typescript \\[[0-9]+\\]: " txt)
-                    (substring txt (match-end 0))
-                  txt))
-           ;; Truncate text at the first newline
-           (txt (substring txt 0 (cl-loop for i from 0 for a across txt
-                                          when (eq a ?\n) return i))))
-      (if nopaintp txt
-        (propertize txt 'face
-                    (flymake--lookup-type-property
-                     (flymake-diagnostic-type diag) 'echo-face 'flymake-error)))))
+  ;;   (defun flymake-diagnostic-oneliner (diag &optional nopaintp)
+  ;;     "Get truncated one-line text string for diagnostic DIAG.
+  ;; This is useful for displaying the DIAG's text to the user in
+  ;; confined spaces, such as the echo area.  Unless NOPAINTP is t,
+  ;; propertize returned text with the `echo-face' property of DIAG's
+  ;; type."
+  ;;     (let* ((txt (flymake-diagnostic-text diag))
+  ;;            ;; Remove leading 'typescript [####]: ' if present
+  ;;            (txt (if (string-match "^typescript \\[[0-9]+\\]: " txt)
+  ;;                     (substring txt (match-end 0))
+  ;;                   txt))
+  ;;            ;; Truncate text at the first newline
+  ;;            (txt (substring txt 0 (cl-loop for i from 0 for a across txt
+  ;;                                           when (eq a ?\n) return i))))
+  ;;       (if nopaintp txt
+  ;;         (propertize txt 'face
+  ;;                     (flymake--lookup-type-property
+  ;;                      (flymake-diagnostic-type diag) 'echo-face 'flymake-error)))))
 
-;;   (defun flymake-diagnostic-oneliner-remove-typescript-prefix (orig-fun diag &optional nopaintp)
-;;   "Advice to remove 'typescript [####]: ' prefix from DIAG before calling ORIG-FUN."
-;;   (let ((new-diag diag))
-;;     (when-let ((txt (flymake-diagnostic-text diag)))
-;;       ;; Check for and remove the prefix 'typescript [####]: '
-;;       (when (string-match "^typescript \\[[0-9]+\\]: " txt)
-;;         (setf (flymake-diagnostic-text diag)
-;;               (substring txt (match-end 0)))))
-;;     ;; Call the original function with the modified diagnostic
-;;     (funcall orig-fun new-diag nopaintp)))
-;; 
-;; (advice-add 'flymake-diagnostic-oneliner :around
-;;             #'flymake-diagnostic-oneliner-remove-typescript-prefix)
+  ;;   (defun flymake-diagnostic-oneliner-remove-typescript-prefix (orig-fun diag &optional nopaintp)
+  ;;   "Advice to remove 'typescript [####]: ' prefix from DIAG before calling ORIG-FUN."
+  ;;   (let ((new-diag diag))
+  ;;     (when-let ((txt (flymake-diagnostic-text diag)))
+  ;;       ;; Check for and remove the prefix 'typescript [####]: '
+  ;;       (when (string-match "^typescript \\[[0-9]+\\]: " txt)
+  ;;         (setf (flymake-diagnostic-text diag)
+  ;;               (substring txt (match-end 0)))))
+  ;;     ;; Call the original function with the modified diagnostic
+  ;;     (funcall orig-fun new-diag nopaintp)))
+  ;; 
+  ;; (advice-add 'flymake-diagnostic-oneliner :around
+  ;;             #'flymake-diagnostic-oneliner-remove-typescript-prefix)
   )
 
-(use-package sideline-flymake
-  :hook (flymake-mode . sideline-mode)
-  :init
-  (setq sideline-flymake-display-mode 'point) ; 'point to show errors only on point
-                                              ; 'line to show errors on the current line
-  (setq sideline-backends-right '(sideline-flymake)))
-
-(use-package sideline
-  :init
-  (setq sideline-backends-left-skip-current-line t   ; don't display on current line (left)
-        sideline-backends-right-skip-current-line nil  ; don't display on current line (right)
-        sideline-order-left 'down                    ; or 'up
-        sideline-order-right 'down                     ; or 'down
-        sideline-format-left "%s   "                 ; format for left aligment
-        sideline-format-right "   %s"                ; format for right aligment
-        sideline-priority 100                        ; overlays' priority
-        sideline-display-backend-name nil))          ; display the backend name
+;; (use-package sideline-flymake
+;;   :hook (flymake-mode . sideline-mode)
+;;   :init
+;;   (setq sideline-flymake-display-mode 'point
+;;         sideline-flymake-max-line 10) ; 'point to show errors only on point
+;;                                               ; 'line to show errors on the current line
+;;   (setq sideline-backends-right '(sideline-flymake)))
+;; 
+;; (use-package sideline
+;;   :init
+;;   (setq sideline-backends-left-skip-current-line t   ; don't display on current line (left)
+;;         sideline-backends-right-skip-current-line nil  ; don't display on current line (right)
+;;         sideline-order-left 'down                    ; or 'up
+;;         sideline-order-right 'down                     ; or 'down
+;;         sideline-format-left "%s   "                 ; format for left aligment
+;;         sideline-format-right "   %s"                ; format for right aligment
+;;         ;; sideline-format-right "%s"                ; format for right aligment
+;;         sideline-priority 100                        ; overlays' priority
+;;         sideline-display-backend-name nil))          ; display the backend name
 
 ;; TODO: Hook
 (use-package dumb-jump
@@ -331,6 +365,8 @@ type."
   :custom
   (read-extended-command-predicate #'command-completion-default-include-p)
   (tab-always-indent 'complete)
+  (corfu-right-margin-width 0)
+  (corfu-left-margin-width 0)
   :config
   (keymap-unset corfu-map "RET")
 
@@ -463,11 +499,22 @@ type."
 
 (use-package prettier
   :ensure t
+  :defer t
+  :hook ((typescript-ts-mode . prettier-mode)
+         (angular-ts-mode . prettier-mode))
   :config
   (add-to-list 'prettier-major-mode-parsers '(angular-ts-mode angular))
-  (global-prettier-mode))
+  (add-to-list 'prettier-major-mode-parsers '(typescript-ts-mode babel-ts)))
 
 (with-eval-after-load 'eldoc
   (eldoc-add-command 'doom/escape)
-  (setq eldoc-echo-area-use-multiline-p nil))
+  ;; (setq eldoc-echo-area-use-multiline-p nil)
+  )
 
+;; (use-package diff-hl
+;;   :ensure (diff-hl :host "github.com" :repo "https://github.com/dgutov/diff-hl")
+;;   :hook ((prog-mode . diff-hl-mode)
+;;          (prog-mode . diff-hl-margin-mode))
+;;   :config
+;;   (setq diff-hl-margin-symbols-alist
+;;         ((insert . "+") (delete . "-") (change . "!") (unknown . "?") (ignored . "i"))))
