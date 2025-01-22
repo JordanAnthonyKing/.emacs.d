@@ -11,7 +11,6 @@
 ;; The minimal-emacs.d project is a customizable base that provides better Emacs
 ;; defaults and optimized startup, intended to serve as a solid foundation for
 ;; your vanilla Emacs configuration.
->>>>>>> upstream/main
 
 ;;; Code:
 
@@ -156,9 +155,11 @@
 
 ;; The native border "uses" a pixel of the fringe on the rightmost
 ;; splits, whereas `window-divider` does not.
-(setq window-divider-default-bottom-width 1
+(setq window-divider-default-bottom-width 4
       window-divider-default-places t
-      window-divider-default-right-width 1)
+      window-divider-default-right-width 4)
+
+(add-hook 'after-init-hook #'window-divider-mode)
 
 ;;; Backup files
 

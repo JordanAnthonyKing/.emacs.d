@@ -1,5 +1,7 @@
 ;;; bindings.el --- DESCRIPTION -*- no-byte-compile: t; lexical-binding: t; -*-
 
+(require 'general)
+
 (setq w32-lwindow-modifier 'super
       w32-rwindow-modifier 'super)
 
@@ -61,7 +63,24 @@ all hooks after it are ignored.")
   :config
   (which-key-setup-side-window-bottom))
 
-(require 'general)
+(use-package casual-suite
+  :ensure (casual-suite :host "github.com" :repo "kickingvegas/casual-suite")
+  :defer t
+  :general
+  (:keymaps 'calc-mode-map :states '(normal visual operator) "?" #'casual-calc-tmenu)
+  (:keymaps 'dired-mode-map :states '(normal visual operator) "?" #'casual-dired-tmenu)
+  (:keymaps 'isearch-mode-map :states '(normal visual operator) "?" #'casual-isearch-tmenu)
+  (:keymaps 'ibuffer-mode-map :states '(normal visual operator) "?" #'casual-ibuffer-tmenu)
+  (:keymaps 'ibuffer-mode-map :states '(normal visual operator) "?" #'casual-ibuffer-filter-tmenu)
+  (:keymaps 'ibuffer-mode-map :states '(normal visual operator) "?" #'casual-ibuffer-sortby-tmenu)
+  (:keymaps 'Info-mode-map :states '(normal visual operator) "?" #'casual-info-tmenu)
+  (:keymaps 'reb-mode-map :states '(normal visual operator) "?" #'casual-re-builder-tmenu)
+  (:keymaps 'reb-lisp-mode-map :states '(normal visual operator) "?" #'casual-re-builder-tmenu)
+  (:keymaps 'bookmark-bmenu-mode-map :states '(normal visual operator) "?" #'casual-bookmarks-tmenu)
+  (:keymaps 'org-agenda-mode-map :states '(normal visual operator) "?" #'casual-agenda-tmenu)
+  (:keymaps 'symbol-overlay-map :states '(normal visual operator) "?" #'casual-symbol-overlay-tmenu)
+  (:states '(normal visual operator) "C-s" #'casual-avy-tmenu) ;; Probably get rid of this
+  (:states '(normal visual operator) "?" #'casual-editkit-main-tmenu))
 
 (general-def (evil-ex-completion-map evil-ex-search-keymap)
   "C-a" #'evil-beginning-of-line
@@ -111,6 +130,14 @@ all hooks after it are ignored.")
   :states '(normal visual motion)   ;; Apply to these evil states
   :keymaps 'override                ;; Ensure it overrides other keymaps
   :prefix "SPC")                    ;; Set "SPC" as the prefix key
+
+;; TOODO: This needs to override
+;; (general-def '(normal visual operator)
+;;   "SPC" (general-simulate-key "C-x")
+;;   "C-x SPC" #'execute-extended-command)
+
+;; (my-leader-def
+;;   "SPC" #'ex
 
 (my-leader-def
   "SPC" #'execute-extended-command
