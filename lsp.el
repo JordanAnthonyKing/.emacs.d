@@ -223,37 +223,37 @@
 
 (add-hook 'compilation-mode-hook '(lambda () (setq toggle-truncate-lines nil)))
 
-(use-package npm
-  :ensure t
-  :defer t
-  :init
-  (setq compilation-scroll-output t)
-  :config
-  (add-to-list 'compilation-error-regexp-alist-alist
-               '(angular-warning
-                 "^Deprecation Warning on line \\([0-9]+\\), column \\([0-9]+\\) of \\(.+\\):"
-                 3 1 2 1))
-  (add-to-list 'compilation-error-regexp-alist-alist
-               '(angular-error
-                 "^Error: \\(.*\\):\\([0-9]+\\):\\([0-9]+\\) - error TS[0-9]+:"
-                 1 2 3 2))
-  (add-to-list 'compilation-error-regexp-alist 'angular-warning)
-  (add-to-list 'compilation-error-regexp-alist 'angular-error)
-  (add-hook 'npm-mode-hook (lambda ()
-                             (setq-local compilation-error-regexp-alist (list 'angular-warning 'angular-error))))
-  ;; (add-hook 'npm-mode-hook (lambda () (visual-line-mode t)))
-  (add-hook 'npm-mode-hook (lambda () (toggle-truncate-lines nil)))
-  ;; (add-hook 'npm-mode-hook 'ansi-colorful-mode)
-  ;; (defun ansi-enable-disable ()
-  ;;   (progn
-  ;;     (ansi-colorful--disable)
-  ;;     (ansi-colorful--enable)))
-  ;; (debounce! ansi-enable-disable 0.2)
-  ;; (add-hook 'compilation-filter-hook #'ansi-enable-disable)
-  (advice-add 'npm-common--compile :around
-              (lambda (orig-fun &rest args)
-                (let ((default-directory (project-root (project-current t))))
-                  (apply orig-fun args)))))
+;(use-package npm
+; :ensure t
+;  :defer t
+;  :init
+; (setq compilation-scroll-output t)
+;  :config
+;  (add-to-list 'compilation-error-regexp-alist-alist
+;               '(angular-warning
+;                 "^Deprecation Warning on line \\([0-9]+\\), column \\([0-9]+\\) of \\(.+\\):"
+;                 3 1 2 1))
+;  (add-to-list 'compilation-error-regexp-alist-alist
+;               '(angular-error
+;                 "^Error: \\(.*\\):\\([0-9]+\\):\\([0-9]+\\) - error TS[0-9]+:"
+;                 1 2 3 2))
+;  (add-to-list 'compilation-error-regexp-alist 'angular-warning)
+;  (add-to-list 'compilation-error-regexp-alist 'angular-error)
+;  (add-hook 'npm-mode-hook (lambda ()
+;                             (setq-local compilation-error-regexp-alist (list 'angular-warning ;'angular-error))))
+;  ;; (add-hook 'npm-mode-hook (lambda () (visual-line-mode t)))
+;  (add-hook 'npm-mode-hook (lambda () (toggle-truncate-lines nil)))
+;  ;; (add-hook 'npm-mode-hook 'ansi-colorful-mode)
+;  ;; (defun ansi-enable-disable ()
+ ; ;;   (progn
+ ; ;;     (ansi-colorful--disable)
+ ; ;;     (ansi-colorful--enable)))
+;  ;; (debounce! ansi-enable-disable 0.2)
+;  ;; (add-hook 'compilation-filter-hook #'ansi-enable-disable)
+;  (advice-add 'npm-common--compile :around
+;              (lambda (orig-fun &rest args)
+;                (let ((default-directory (project-root (project-current t))))
+;                  (apply orig-fun args)))))
 
 ;; (use-package fancy-compilation
 ;;   :commands (fancy-compilation-mode))
@@ -349,6 +349,7 @@
             "C-n" #'corfu-next
             "C-p" #'corfu-previous)
   (:keymaps 'corfu-map
+            :states 'insert
             "C-SPC" #'corfu-insert-separator
             "C-k" #'corfu-previous
             "C-j" #'corfu-next
@@ -490,7 +491,7 @@
   :defer t
   :hook (prog-mode . highlight-parentheses-mode)
   :config
-  (setq highlight-parentheses-colors '("#fda50f")))
+  (setq highlight-parentheses-colors '("#000000")))
 
 (use-package editorconfig
   :ensure t
@@ -518,3 +519,15 @@
 ;;   :config
 ;;   (setq diff-hl-margin-symbols-alist
 ;;         ((insert . "+") (delete . "-") (change . "!") (unknown . "?") (ignored . "i"))))
+
+(use-package indent-bars
+  :hook (prog-mode . indent-bars-mode)
+  ;; :custom
+  ;; (indent-bars-prefer-character "-")
+  :init
+  (setq indent-bars-prefer-character t
+        indent-bars-no-stipple-char ?\│
+        indent-bars-color-by-depth nil
+        ;; indent-bars-color '("#595959")
+        indent-bars-color '("#ddd")
+        indent-bars-highlight-current-depth '(:color "#000000")))

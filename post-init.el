@@ -96,12 +96,12 @@
   :ensure t
   :commands olivetti-mode)
 
-(use-package pulsar
-  :ensure t
-  :commands pulsar-global-mode
-  :hook (elpaca-after-init . pulsar-global-mode))
+;(use-package pulsar
+;  :ensure t
+;  :commands pulsar-global-mode
+;  :hook (elpaca-after-init . pulsar-global-mode))
 
-;; (set-face-attribute 'default nil :font "Berkeley Mono-10")
+;; (set-face-attribute 'default nil :font "Berkeley Mono-14")
 (set-face-attribute 'default nil :font "Berkeley Mono ExtraCondensed-10")
 
 
