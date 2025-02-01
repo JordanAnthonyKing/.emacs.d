@@ -1,4 +1,4 @@
-;;; evil.el --- >:L -*- no-byte-compile: t; lexical-binding: t; -*-
+'; evil.el --- >:L -*- no-byte-compile: t; lexical-binding: t; -*-
 
 (require 'general)
 
@@ -25,19 +25,19 @@
   (evil-normal-state)
   (evil-visual-restore))
 
-(define-minor-mode undo-fu-mode
-    "Enables `undo-fu' for the current session."
-    :keymap (let ((map (make-sparse-keymap)))
-              (define-key map [remap undo] #'undo-fu-only-undo)
-              (define-key map [remap redo] #'undo-fu-only-redo)
-              (define-key map (kbd "C-_")     #'undo-fu-only-undo)
-              (define-key map (kbd "M-_")     #'undo-fu-only-redo)
-              (define-key map (kbd "C-M-_")   #'undo-fu-only-redo-all)
-              (define-key map (kbd "C-x r u") #'undo-fu-session-save)
-              (define-key map (kbd "C-x r U") #'undo-fu-session-recover)
-              map)
-    :init-value nil
-    :global t)
+;; (define-minor-mode undo-fu-mode
+;;     "Enables `undo-fu' for the current session."
+;;     :keymap (let ((map (make-sparse-keymap)))
+;;               (define-key map [remap undo] #'undo-fu-only-undo)
+;;               (define-key map [remap redo] #'undo-fu-only-redo)
+;;               (define-key map (kbd "C-_")     #'undo-fu-only-undo)
+;;               (define-key map (kbd "M-_")     #'undo-fu-only-redo)
+;;               (define-key map (kbd "C-M-_")   #'undo-fu-only-redo-all)
+;;               (define-key map (kbd "C-x r u") #'undo-fu-session-save)
+;;               (define-key map (kbd "C-x r U") #'undo-fu-session-recover)
+;;               map)
+;;     :init-value nil
+;;     :global t)
 
 ;; (use-package undo-fu
 ;;   :ensure t
@@ -173,6 +173,30 @@
   :hook (evil-mode . evil-collection-init)
   :config
   (setq evil-collection-want-unimpaired-p t))
+
+(use-package evil-swap-keys
+  :ensure t
+  :hook (evil-mode . global-evil-swap-keys-mode)
+  :config
+    (add-hook 'prog-mode-hook #'evil-swap-keys-swap-number-row))
+
+(use-package god-mode
+  :ensure t (god-mode :host "github.com" :repo "DogLooksGood/god-mode")
+  :config
+  (add-to-list 'god-mode-translate-alist '("C-x C-p" "C-x p"))
+  (add-to-list 'god-mode-translate-alist '("C-p" "C-x p"))
+  (add-to-list 'god-mode-translate-alist '("C-b" "C-x b"))
+  (add-to-list 'god-mode-translate-alist '("C-x C-b" "C-x b"))
+  (add-to-list 'god-mode-translate-alist '("C-SPC" "M-x"))
+  (add-to-list 'god-mode-translate-alist '("C-x C-t" "C-x t"))
+  (add-to-list 'god-mode-translate-alist '("C-t" "C-x t"))
+  (setq god-mode-can-omit-literal-key 't))
+
+(use-package evil-god-state
+  :ensure (evil-god-state :host "github.com" :repo "gridaphobe/evil-god-state")
+  :config
+  (evil-define-key 'god global-map [escape] 'evil-god-state-bail)
+  (evil-define-key '(normal visual) global-map " " 'evil-execute-in-god-state))
 
 ;; TODO: Meow-like bindings for this
 ;; (use-package evil-easymotion

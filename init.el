@@ -155,7 +155,7 @@
 
 ;; The native border "uses" a pixel of the fringe on the rightmost
 ;; splits, whereas `window-divider` does not.
-(setq window-divider-default-bottom-width 4
+(setq window-divider-default-bottom-width 1
       window-divider-default-places t
       window-divider-default-right-width 4)
 

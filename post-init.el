@@ -46,6 +46,19 @@
   :config
   (load-theme 'modus-operandi :no-confirm))
 
+(use-package project
+  :ensure nil
+:config  
+(require 'keymap) ;; keymap-substitute requires emacs version 29.1?
+(require 'cl-seq)
+
+(keymap-substitute project-prefix-map #'project-find-regexp #'consult-ripgrep)
+(cl-nsubstitute-if
+  '(consult-ripgrep "Find regexp")
+  (pcase-lambda (`(,cmd _)) (eq cmd #'project-find-regexp))
+  project-switch-commands))
+
+
 ;; Use use-package to load the local package
 ;; (use-package lambda-themes
 ;;   :ensure nil
@@ -284,9 +297,15 @@
 ;; Add the local lisp directory to the load-path
 (add-to-list 'load-path (expand-file-name "lisp" minimal-emacs-user-directory))
 
-(use-package nano-vertico
-  :ensure nil
-  :load-path "lisp/"
-  :after vertico)
+;; (use-package nano-vertico
+;;   :ensure nil
+;;   :load-path "lisp/"
+;;   :after vertico)
+
+;; (use-package nano-theme
+;;   :ensure t)
+;; (use-package book-mode
+;;   :ensure nil
+;;   :load-path "lisp/")
 
 (minimal-emacs-load-user-init "chatgpt.el")
