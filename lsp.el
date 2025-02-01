@@ -3,7 +3,7 @@
 (setq text-mode-ispell-word-completion nil) ;; WTF
 (setq treesit-font-lock-level 5)
 
-(setq display-line-numbers-current-absolute nil)
+;; (setq display-line-numbers-current-absolute nil)
 (setq display-line-numbers-type 'relative)
 (add-hook 'prog-mode-hook #'display-line-numbers-mode)
 

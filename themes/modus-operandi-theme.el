@@ -178,7 +178,7 @@ which corresponds to a minimum contrast in relative luminance of
       (bg-char-1 "#ffaaff")
       (bg-char-2 "#dff000")
 
-      (bg-mode-line-active        "#ffffff")
+      (bg-mode-line-active        "#f2f2f2")
       (fg-mode-line-active        "#000000")
       (border-mode-line-active    "#000000")
       (bg-mode-line-inactive      "#fff")
