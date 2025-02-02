@@ -150,14 +150,14 @@
 
 ;; Prefer vertical splits over horizontal ones
 ;; TODO: Investigate
-(setq split-width-threshold 170
-      split-height-threshold nil)
+;; (setq split-width-threshold 170
+;;       split-height-threshold nil)
 
 ;; The native border "uses" a pixel of the fringe on the rightmost
 ;; splits, whereas `window-divider` does not.
 (setq window-divider-default-bottom-width 1
       window-divider-default-places t
-      window-divider-default-right-width 4)
+      window-divider-default-right-width 3)
 
 (add-hook 'after-init-hook #'window-divider-mode)
 

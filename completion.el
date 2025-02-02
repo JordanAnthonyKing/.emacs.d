@@ -13,6 +13,8 @@
   :ensure t
   :hook (elpaca-after-init . vertico-mode)
   :general
+  (:states 'normal
+           "C-."      #'vertico-repeat)
   (:keymaps 'vertico-map
             "M-RET"   #'vertico-exit-input
             "C-j"     #'vertico-next
@@ -30,7 +32,7 @@
             "DEL"     #'vertico-directory-delete-char)
   :config
   (setq vertico-resize nil
-        vertico-count 17
+        vertico-count 12
         vertico-cycle t)
   (setq-default completion-in-region-function #'consult-completion-in-region)
   (add-hook 'minibuffer-setup-hook #'vertico-repeat-save))
@@ -58,13 +60,13 @@
     "If MODE is enabled, highlight it as font-lock-constant-face."
     (let ((sym (intern cmd)))
       (with-current-buffer (nth 1 (buffer-list))
-      (if (or (eq sym major-mode)
-              (and
-               (memq sym minor-mode-list)
-               (boundp sym)
-               (symbol-value sym)))
-          (add-face-text-property 0 (length cmd) 'font-lock-constant-face 'append cmd)))
-        cmd))
+        (if (or (eq sym major-mode)
+                (and
+                 (memq sym minor-mode-list)
+                 (boundp sym)
+                 (symbol-value sym)))
+            (add-face-text-property 0 (length cmd) 'font-lock-constant-face 'append cmd)))
+      cmd))
 
   (add-to-list 'vertico-multiform-categories
                '(file
@@ -78,81 +80,40 @@
   :defer t
   :hook (completion-list-mode . consult-preview-at-point-mode)
   :general
-  ([remap bookmark-jump]                 #'consult-bookmark
-   [remap evil-show-marks]               #'consult-mark
-   ;; [remap evil-show-jumps]               #'+vertico/jump-list
-   [remap evil-show-registers]           #'consult-register
-   [remap goto-line]                     #'consult-goto-line
-   [remap imenu]                         #'consult-imenu
-   [remap occur]                         #'consult-line
-   [remap Info-search]                   #'consult-info
-   [remap locate]                        #'consult-locate
-   [remap load-theme]                    #'consult-theme
-   [remap man]                           #'consult-man
-   [remap recentf-open-files]            #'consult-recent-file
-   [remap switch-to-buffer]              #'consult-buffer
-   [remap switch-to-buffer-other-window] #'consult-buffer-other-window
-   [remap switch-to-buffer-other-frame]  #'consult-buffer-other-frame
-   [remap switch-to-buffer-other-tab]    #'consult-buffer-other-tab
-   [remap yank-pop]                      #'consult-yank-pop
-   [remap repeat-complex-command]        #'consult-complex-command
-   [remap project-switch-to-buffer]      #'consult-project-bruffer
-   [remap isearch-edit-string]           #'consult-isearch-history
-   [remap next-matching-history-element] #'consult-history
+  ([remap bookmark-jump]                     #'consult-bookmark
+   [remap evil-show-marks]                   #'consult-mark
+   ;; [remap evil-show-jumps]                   #'+vertico/jump-list
+   [remap evil-show-registers]               #'consult-register
+   [remap goto-line]                         #'consult-goto-line
+   [remap imenu]                             #'consult-imenu
+   [remap occur]                             #'consult-line
+   [remap isearch]                           #'consult-line
+   [remap Info-search]                       #'consult-info
+   [remap locate]                            #'consult-locate
+   [remap load-theme]                        #'consult-theme
+   [remap man]                               #'consult-man
+   [remap recentf-open-files]                #'consult-recent-file
+   [remap switch-to-buffer]                  #'consult-buffer
+   [remap switch-to-buffer-other-window]     #'consult-buffer-other-window
+   [remap switch-to-buffer-other-frame]      #'consult-buffer-other-frame
+   [remap switch-to-buffer-other-tab]        #'consult-buffer-other-tab
+   [remap yank-pop]                          #'consult-yank-pop
+   [remap repeat-complex-command]            #'consult-complex-command
+   [remap project-switch-to-buffer]          #'consult-project-bruffer
+   [remap isearch-edit-string]               #'consult-isearch-history
+   [remap next-matching-history-element]     #'consult-history
    [remap previous-matching-history-element] #'consult-history)
   :general
-  (;; C-c bindings in `mode-specific-map'
-   ("C-c M-x" . consult-mode-command)
-   ("C-c h" . consult-history)
-   ("C-c k" . consult-kmacro)
-   ("C-c m" . consult-man)
-   ("C-c i" . consult-info)
-   ([remap Info-search] . consult-info)
-   ;; C-x bindings in `ctl-x-map'
-   ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
-   ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
-   ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
-   ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
-   ("C-x t b" . consult-buffer-other-tab)    ;; orig. switch-to-buffer-other-tab
-   ("C-x r b" . consult-bookmark)            ;; orig. bookmark-jump
-   ("C-x p b" . consult-project-buffer)      ;; orig. project-switch-to-buffer
-   ;; Custom M-# bindings for fast register access
-   ("M-#" . consult-register-load)
-   ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
-   ("C-M-#" . consult-register)
-   ;; Other custom bindings
-   ("M-y" . consult-yank-pop)                ;; orig. yank-pop
-   ;; M-g bindings in `goto-map'
-   ("M-g e" . consult-compile-error)
-   ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck
-   ("M-g g" . consult-goto-line)             ;; orig. goto-line
-   ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
-   ("M-g o" . consult-outline)               ;; Alternative: consult-org-heading
-   ("M-g m" . consult-mark)
-   ("M-g k" . consult-global-mark)
-   ("M-g i" . consult-imenu)
-   ("M-g I" . consult-imenu-multi)
-   ;; M-s bindings in `search-map'
-   ("M-s d" . consult-find)                  ;; Alternative: consult-fd
-   ("M-s c" . consult-locate)
-   ("M-s g" . consult-grep)
-   ("M-s G" . consult-git-grep)
-   ("M-s r" . consult-ripgrep)
-   ("M-s l" . consult-line)
-   ("M-s L" . consult-line-multi)
-   ("M-s k" . consult-keep-lines)
-   ("M-s u" . consult-focus-lines)
-   ;; Isearch integration
-   ("M-s e" . consult-isearch-history)
-   :map isearch-mode-map
-   ("M-e" . consult-isearch-history)         ;; orig. isearch-edit-string
-   ("M-s e" . consult-isearch-history)       ;; orig. isearch-edit-string
-   ("M-s l" . consult-line)                  ;; needed by consult-line to detect isearch
-   ("M-s L" . consult-line-multi)            ;; needed by consult-line to detect isearch
-   ;; Minibuffer history
-   :map minibuffer-local-map
-   ("M-s" . consult-history)                 ;; orig. next-matching-history-element
-   ("M-r" . consult-history))                ;; orig. previous-matching-history-element
+  ("C-c r" #'consult-ripgrep
+   "C-c f" #'consult-find
+   "C-c g" #'consult-grep
+   "C-c G" #'consult-git-grep
+   "C-c i" #'consult-imenu
+   "C-c I" #'consult-imenu-multi
+   "C-c r" #'consult-ripgrep
+   "C-c l" #'consult-line
+   "C-c L" #'consult-line-multi
+   "C-c o" #'consult-outline)
   :config
   (setq register-preview-delay 0.5
         register-preview-function #'consult-register-format)
@@ -161,24 +122,24 @@
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
 
-;; (setq read-file-name-function #'consult-find-file-with-preview)
-;; 
-;; (defun consult-find-file-with-preview (prompt &optional dir default mustmatch initial pred)
-;;   (interactive)
-;;   (let ((default-directory (or dir default-directory))
-;;         (minibuffer-completing-file-name t))
-;;     (consult--read #'read-file-name-internal :state (consult--file-preview)
-;;                    :prompt prompt
-;;                    :initial initial
-;;                    :require-match mustmatch
-;;                    :predicate pred)))
+  (setq read-file-name-function #'consult-find-file-with-preview)
 
-    ;; (defvar my-consult-line-map
-    ;; (let ((map (make-sparse-keymap)))
-    ;;     (define-key map "\C-s" #'previous-history-element)
-    ;;     map))
+  (defun consult-find-file-with-preview (prompt &optional dir default mustmatch initial pred)
+    (interactive)
+    (let ((default-directory (or dir default-directory))
+          (minibuffer-completing-file-name t))
+      (consult--read #'read-file-name-internal :state (consult--file-preview)
+                     :prompt prompt
+                     :initial initial
+                     :require-match mustmatch
+                     :predicate pred)))
 
-;;     (consult-customize consult-line :keymap my-consult-line-map)
+  (defvar my-consult-line-map
+    (let ((map (make-sparse-keymap)))
+      (define-key map "\C-s" #'previous-history-element)
+      map))
+
+  (consult-customize consult-line  :keymap my-consult-line-map)
   
   (consult-customize
    consult-theme :preview-key '(:debounce 0.2 any)
@@ -186,124 +147,17 @@
    consult-bookmark consult-recent-file consult-xref
    consult--source-bookmark consult--source-file-register
    consult--source-recent-file consult--source-project-recent-file
-   :preview-key "C-RET")
-  (setq consult-narrow-key "<")
-
-;;; TEST
-
-
-(defun my-consult--source-recentf-items-uniq ()
-  (let ((ht (consult--buffer-file-hash))
-        file-name-handler-alist ;; No Tramp slowdown please.
-        items)
-    (dolist (file (my-recentf-list-uniq) (nreverse items))
-      ;; Emacs 29 abbreviates file paths by default, see
-      ;; `recentf-filename-handlers'.
-      (unless (eq (aref (cdr file) 0) ?/)
-        (setcdr file (expand-file-name (cdr file))))
-      (unless (gethash (cdr file) ht)
-        (push (propertize
-               (car file)
-               'multi-category `(file . ,(cdr file)))
-              items)))))
-
-(plist-put consult--source-recent-file
-           :items #'my-consult--source-recentf-items-uniq)
-
-(defun my-recentf-list-uniq ()
-  (let* ((proposed (mapcar (lambda (f)
-                             (cons (file-name-nondirectory f) f))
-                           recentf-list))
-         (recentf-uniq proposed)
-         conflicts resol file)
-    ;; collect conflicts
-    (while proposed
-      (setq file (pop proposed))
-      (if (assoc (car file) conflicts)
-          (push (cdr file) (cdr (assoc (car file) conflicts)))
-        (if (assoc (car file) proposed)
-            (push (list (car file) (cdr file)) conflicts))))
-    ;; resolve conflicts
-    (dolist (name conflicts)
-      (let* ((files (mapcar (lambda (f)
-                              ;; data structure:
-                              ;; (file remaining-path curr-propos)
-                              (list f
-                                    (file-name-directory f)
-                                    (file-name-nondirectory f)))
-                            (cdr name)))
-             (curr-step (mapcar (lambda (f)
-                                  (file-name-nondirectory
-                                   (directory-file-name (cadr f))))
-                                files)))
-        ;; Quick check, if there are no duplicates, we are done.
-        (if (eq (length curr-step) (length (seq-uniq curr-step)))
-            (setq resol
-                  (append resol
-                          (mapcar (lambda (f)
-                                    (cons (car f)
-                                          (file-name-concat
-                                           (file-name-nondirectory
-                                            (directory-file-name (cadr f)))
-                                           (file-name-nondirectory (car f)))))
-                                  files)))
-          (while files
-            (let (files-remain)
-              (dolist (file files)
-                (let ((curr-propos (caddr file))
-                      (curr-part (file-name-nondirectory
-                                  (directory-file-name (cadr file))))
-                      (rest-path (file-name-directory
-                                  (directory-file-name (cadr file))))
-                      (curr-step
-                       (mapcar (lambda (f)
-                                 (file-name-nondirectory
-                                  (directory-file-name (cadr f))))
-                               files)))
-                  (cond ((length= (seq-uniq curr-step) 1)
-                         ;; If all elements of curr-step are equal, we skip
-                         ;; this path part.
-                         (push (list (car file)
-                                     rest-path
-                                     curr-propos)
-                               files-remain))
-                        ((member curr-part (cdr (member curr-part curr-step)))
-                         ;; There is more than one curr-part in curr-step
-                         ;; for this candidate.
-                         (push (list (car file)
-                                     rest-path
-                                     (file-name-concat curr-part curr-propos))
-                               files-remain))
-                        (t
-                         ;; There is no repetition of curr-part in curr-step
-                         ;; for this candidate.
-                         (push (cons (car file)
-                                     (file-name-concat curr-part curr-propos))
-                               resol)))))
-              (setq files files-remain))))))
-    ;; apply resolved conflicts
-    (let (items)
-      (dolist (file recentf-uniq (nreverse items))
-        (let ((curr-resol (assoc (cdr file) resol)))
-          (if curr-resol
-              (push (cons (cdr curr-resol) (cdr file)) items)
-            (push file items)))))))
-
-
-
-
-
-  ;;; TEST
-  )
+   :preview-key "C-.")
+  (setq consult-narrow-key "<"))
 
 ;; (use-package consult-dir
-  ;; :ensure t
-  ;; :after vertico
-  ;; :general
-  ;; ("C-x C-d" #'consult-dir)
-  ;; (:keymaps vertico-map
-            ;; "C-x C-d" #'consult-dir
-            ;; "C-x C-j" #'consult-dir-jump-file))
+;; :ensure t
+;; :after vertico
+;; :general
+;; ("C-x C-d" #'consult-dir)
+;; (:keymaps vertico-map
+;; "C-x C-d" #'consult-dir
+;; "C-x C-j" #'consult-dir-jump-file))
 
 (use-package consult-xref
   :ensure nil
@@ -328,7 +182,10 @@
   (setq which-key-use-C-h-commands nil
         prefix-help-command #'embark-prefix-help-command)
   :config
-  (keymap-set embark-general-map "s" #'consult-ripgrep)
+  (keymap-set embark-general-map "x" #'xref-find-references)
+  (keymap-set embark-general-map "r" #'consult-ripgrep)
+  (keymap-set embark-general-map "f" #'consult-find)
+  (keymap-set embark-general-map "l" #'consult-line)
 
   (defun embark-which-key-indicator ()
     "An embark indicator that displays keymaps using which-key.
@@ -367,7 +224,7 @@ targets."
 
   (advice-add #'embark-completing-read-prompter
               :around #'embark-hide-which-key-indicator))
-  
+
 ;; Consult users will also want the embark-consult package.
 (use-package embark-consult
   :ensure t ; only need to install it, embark loads it after consult if found

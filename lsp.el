@@ -349,7 +349,6 @@
             "C-n" #'corfu-next
             "C-p" #'corfu-previous)
   (:keymaps 'corfu-map
-            :states 'insert
             "C-SPC" #'corfu-insert-separator
             "C-k" #'corfu-previous
             "C-j" #'corfu-next

@@ -39,6 +39,76 @@
 
 ;; Add the local lisp directory to the load-path
 (add-to-list 'load-path (expand-file-name "themes" minimal-emacs-user-directory))
+(add-to-list 'load-path (expand-file-name "lisp" minimal-emacs-user-directory))
+
+;; (use-package nano-theme
+;;   :ensure nil
+;;   :load-path "themes/"
+;;   :config
+;;   (load-theme 'nano t))
+;; 
+;; (use-package nano-read
+;;   :ensure nil
+;;   :load-path "lisp/")
+;; 
+;; (use-package nano-modeline
+;;   :ensure nil
+;;   :load-path "lisp/")
+;; 
+;; (use-package nano-box
+;;   :ensure nil
+;;   :load-path "lisp/")
+
+(use-package svg-face-tag-mode
+  :ensure nil
+  :load-path "lisp/"
+  :init
+(defun my-svg-tag-make (tag &rest args)
+  "Return an SVG tag displaying TAG with explicit color parameters.
+ARGS are passed to `svg-lib-tag' with explicit handling for:
+  :foreground (string) -- the desired foreground color,
+  :background (string) -- the desired background color,
+  :inverse (bool)     -- if non-nil, swaps the colors,
+  :beg (integer)      -- first index of TAG substring to display (default 0),
+  :end (integer)      -- last index of TAG substring to display.
+Other keyword arguments in ARGS are passed along to `svg-lib-tag'.
+
+Note that this function does not use any face attribute lookup (unlike
+`svg-tag-make`) and it preserves the TAG string exactly as provided,
+so trailing whitespace is not removed.  The properties :foreground,
+:background, :stroke, and :font-weight are overwritten.
+"
+  (let* ((foreground (plist-get args :foreground))
+         (background (plist-get args :background))
+         (inverse    (plist-get args :inverse))
+         ;; Do NOT trim the tag string so that any trailing whitespace is preserved.
+         (tag tag)
+         (beg (or (plist-get args :beg) 0))
+         (end (plist-get args :end))
+         ;; Remove any color parameters from ARGS so they don't override ours.
+         (args (svg-tag--plist-delete args 'foreground))
+         (args (svg-tag--plist-delete args 'background))
+         (args (svg-tag--plist-delete args 'stroke))
+         (args (svg-tag--plist-delete args 'font-weight)))
+    (if inverse
+        (apply #'svg-lib-tag (substring tag beg end) nil
+               :stroke 0
+               :font-weight 'semibold
+               :foreground background
+               :background foreground
+               args)
+      (apply #'svg-lib-tag (substring tag beg end) nil
+             :stroke 2
+             :font-weight 'regular
+             :foreground foreground
+             :background background
+             args))))
+
+  (setq svg-face-tag-faces
+        '((magit-hash . (lambda (text) (my-svg-tag-make text :padding 1 :radius 0 :background "red" :font-size 9)))))
+  
+
+  )
 
 (use-package modus-themes
   :ensure nil
@@ -188,6 +258,10 @@
 ;;   (customize-set-variable 'flymake-mode-line-counter-format '("" flymake-mode-line-error-counter flymake-mode-line-warning-counter flymake-mode-line-note-counter ""))
 ;;   (customize-set-variable 'flymake-mode-line-format '(" " flymake-mode-line-exception flymake-mode-line-counters)))
 
+(add-to-list 'load-path (expand-file-name "lisp" minimal-emacs-user-directory))
+;; (require 'doom-lib)
+;; (require 'doom-keybinds)
+;; (minimal-emacs-load-user-init "bindings.el")
 (minimal-emacs-load-user-init "bindings.el")
 (minimal-emacs-load-user-init "evil.el")
 ;; TODO: Rename to vertico
@@ -277,6 +351,26 @@
 ;;   (setq magit-commit-diff-inhibit-same-window t)
 ;;   (current-window-only-mode))
 
+(setq project-mode-line t)
+(setq project-mode-line-face 'package-name)
+(setq project-file-history-behavior 'relativize)
+(setq column-number-mode t)
+(line-number-mode)
+(size-indication-mode)
+
+
+(setq-default mode-line-format '("%e" mode-line-front-space
+                                      (:propertize
+                                       ("" mode-line-mule-info mode-line-client mode-line-modified mode-line-remote
+                                        mode-line-window-dedicated)
+                                       ;; display (min-width (6.0))
+                                       )
+                                      mode-line-frame-identification mode-line-buffer-identification "   "
+                                      mode-line-position anzu--update-mode-line (project-mode-line project-mode-line-format)
+                                      mode-line-format-right-align
+                                      (vc-mode vc-mode) " " mode-line-misc-info flymake-mode-line-counters " "))
+
+
 
 (add-hook 'prog-mode-hook #'(lambda ()
                               (setq mode-line-format
@@ -289,13 +383,12 @@
                                       mode-line-frame-identification mode-line-buffer-identification "   "
                                       mode-line-position anzu--update-mode-line (project-mode-line project-mode-line-format)
                                       mode-line-format-right-align
-                                      (vc-mode vc-mode) " " mode-line-misc-info flymake-mode-line-counters " " mode-line-end-spaces))))
+                                      (vc-mode vc-mode) " " mode-line-misc-info flymake-mode-line-counters " "))))
 
 ;; (setq-default mode-line-format nil)
 ;; (setq mode-line-format nil)
 
 ;; Add the local lisp directory to the load-path
-(add-to-list 'load-path (expand-file-name "lisp" minimal-emacs-user-directory))
 
 ;; (use-package nano-vertico
 ;;   :ensure nil
@@ -308,4 +401,56 @@
 ;;   :ensure nil
 ;;   :load-path "lisp/")
 
-(minimal-emacs-load-user-init "chatgpt.el")
+;; (minimal-emacs-load-user-init "chatgpt.el")
+
+(use-package gptel
+  :ensure t
+  :defer t
+  :commands (gptel gptel-add gptel-menu)
+  :config
+  (setq
+   gptel-model 'deepseek-r1:8b
+   gptel-backend (gptel-make-ollama "Ollama"             ;Any name of your choosing
+                      :host "localhost:11434"               ;Where it's running
+                      :stream t                             ;Stream responses
+                      :models '(deepseek-r1:8b)))          ;List of models
+
+  ;; (setq gptel-use-header-line nil)
+  (add-hook 'gptel-mode-hook #'visual-line-mode)
+  ;; (add-hook 'gptel-mode-hook #'olivetti-mode)
+  )
+
+
+;; (use-package minuet
+;;   :ensure (minuet :host "github.com" :repo "milanglacier/minuet-ai.el")
+;;   :bind
+;;   (("M-y" . #'minuet-complete-with-minibuffer) ;; use minibuffer for completion
+;;    ("M-i" . #'minuet-show-suggestion) ;; use overlay for completion
+;;    :map minuet-active-mode-map
+;;    ;; These keymaps activate only when a minuet suggestion is displayed in the current buffer
+;;    ("M-p" . #'minuet-previous-suggestion) ;; invoke completion or cycle to next completion
+;;    ("M-n" . #'minuet-next-suggestion) ;; invoke completion or cycle to previous completion
+;;    ("M-A" . #'minuet-accept-suggestion) ;; accept whole completion
+;;    ;; Accept the first line of completion, or N lines with a numeric-prefix:
+;;    ;; e.g. C-u 2 M-a will accepts 2 lines of completion.
+;;    ("M-a" . #'minuet-accept-suggestion-line)
+;;    ("M-e" . #'minuet-dismiss-suggestion))
+;; 
+;;   :init
+;;   ;; if you want to enable auto suggestion.
+;;   ;; Note that you can manually invoke completions without enable minuet-auto-suggestion-mode
+;;   (add-hook 'prog-mode-hook #'minuet-auto-suggestion-mode)
+;; 
+;;   :config
+;;   (setq minuet-provider 'openai-fim-compatible)
+;;   (plist-put minuet-openai-fim-compatible-options :end-point "http://localhost:11434/v1/completions")
+;;   ;; an arbitrary non-null environment variable as placeholder
+;;   (plist-put minuet-openai-fim-compatible-options :name "Ollama")
+;;   (plist-put minuet-openai-fim-compatible-options :api-key "TERM")
+;;   (plist-put minuet-openai-fim-compatible-options :model "qwen2.5-coder:3b")
+;; 
+;;   (minuet-set-optional-options minuet-openai-fim-compatible-options :max_tokens 256)
+;; 
+;;   ;; Required when defining minuet-ative-mode-map in insert/normal states.
+;;   ;; Not required when defining minuet-active-mode-map without evil state.
+;;   (add-hook 'minuet-active-mode-hook #'evil-normalize-keymaps))
