@@ -144,8 +144,8 @@
 
 ;; Prefer vertical splits over horizontal ones
 ;; TODO: Investigate
-(setq split-width-threshold 170
-      split-height-threshold nil)
+;; (setq split-width-threshold 170
+;;       split-height-threshold nil)
 
 ;;; Buffers
 

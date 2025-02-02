@@ -22,8 +22,8 @@
 (setq-default left-fringe-width 4)
 (setq-default right-fringe-width 4)
 
-(setq window-divider-default-right-width 4)
-(setq window-divider-default-bottom-width 4)
+(setq window-divider-default-right-width 3)
+(setq window-divider-default-bottom-width 1)
 
 ;; (setq line-spacing 0.1)
 ;; (setq-default line-spacing 0.1)

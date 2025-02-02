@@ -2920,8 +2920,8 @@ fringe :foreground ,fg-main)))
     `(magit-blame-highlight ((,c :background ,bg-active :foreground ,fg-main)))
     `(magit-blame-name (( )))
     `(magit-blame-summary ((  )))
-    `(magit-branch-local ((,c :foreground ,bg-main :background ,bg-green-intense :box (:line-width -1 :color ,fg-main))))
-    `(magit-branch-remote ((,c :foreground ,bg-main :background ,bg-blue-intense :box (:line-width -1 :color ,fg-main))))
+    `(magit-branch-local ((,c :foreground ,bg-main :background ,bg-green-intense :box (:line-width -1 :color ,fg-main) :overline ,bg-main)))
+    `(magit-branch-remote ((,c :foreground ,bg-main :background ,bg-blue-intense :box (:line-width -1 :color ,fg-main) :overline ,bg-main)))
     `(magit-branch-upstream ((,c :inherit italic)))
     `(magit-branch-warning ((,c :inherit warning)))
     `(magit-cherry-equivalent ((,c :foreground ,magenta)))
@@ -2947,7 +2947,10 @@ fringe :foreground ,fg-main)))
     `(magit-diffstat-removed ((,c :foreground ,fg-removed-intense)))
     `(magit-dimmed ((,c :inherit shadow)))
     `(magit-filename ((,c :foreground ,accent-2)))
-    `(magit-hash ((,c :foreground ,fg-main :background ,bg-yellow-intense :box (:color ,fg-main :line-width (1 . -1)))))
+    `(magit-hash ((,c :foreground ,bg-yellow-intense
+                      ;; :background
+                      ;; ,bg-yellow-intense :box (:color ,fg-main :line-width (1 . -1)) :overline ,bg-main
+                      )))
     `(magit-head ((,c :inherit magit-branch-local)))
     `(magit-header-line ((,c :inherit bold)))
     `(magit-header-line-key ((,c :inherit modus-themes-key-binding)))
@@ -2993,7 +2996,7 @@ fringe :foreground ,fg-main)))
     `(magit-signature-good ((,c :inherit success)))
     `(magit-signature-revoked ((,c :inherit bold :foreground ,warning)))
     `(magit-signature-untrusted ((,c :inherit (bold shadow))))
-    `(magit-tag ((,c :foreground ,fg-main :background ,bg-yellow-subtle :box -1))) ; compare with branches
+    `(magit-tag ((,c :foreground ,fg-main :background ,bg-yellow-subtle :box -1 :overline ,bg-main))) ; compare with branches
 ;;;;; make-mode (makefiles)
     `(makefile-makepp-perl ((,c :background ,bg-dim)))
     `(makefile-space ((,c :background ,bg-inactive)))
@@ -3110,7 +3113,7 @@ fringe :foreground ,fg-main)))
 ;;;;; mode-line
     `(mode-line ((,c :inherit modus-themes-ui-variable-pitch
                      ;; :underline (:color ,border-mode-line-active :position t)
-                     :box (:color ,border-mode-line-active :line-width 1)
+                     :box (:color ,border-mode-line-active :line-width (-1 . 1))
                      :background ,bg-mode-line-active
                      :foreground ,fg-mode-line-active)))
     `(mode-line-active ((,c :inherit mode-line)))
@@ -3119,7 +3122,7 @@ fringe :foreground ,fg-main)))
     `(mode-line-highlight ((,c :background ,bg-hover :foreground ,fg-main :box ,fg-main)))
     `(mode-line-inactive ((,c :inherit modus-themes-ui-variable-pitch
                               ;; :underline (:color ,border-mode-line-inactive :position t)
-                              :box (:color ,border-mode-line-inactive :line-width 1)
+                              :box (:color ,border-mode-line-inactive :line-width (-1 . 1))
                               :background ,bg-mode-line-inactive
                               :foreground ,fg-mode-line-inactive)))
 ;;;;; mood-line
@@ -4137,8 +4140,8 @@ fringe :foreground ,fg-main)))
     `(whitespace-trailing ((,c :background ,bg-space-err)))
 ;;;;; window-divider-mode
     `(window-divider ((,c :foreground ,border)))
-    `(window-divider-first-pixel ((,c :foreground ,border)))
-    `(window-divider-last-pixel ((,c :foreground ,border)))
+    `(window-divider-first-pixel ((,c :foreground ,bg-main)))
+    `(window-divider-last-pixel ((,c :foreground ,bg-main)))
 ;;;;; window-tool-bar-mode
     `(window-tool-bar-button ((,c :inherit modus-themes-button)))
     `(window-tool-bar-button-hover ((,c :inherit (modus-themes-button) :background ,fg-main)))
