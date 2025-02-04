@@ -2,7 +2,6 @@
 
 (require 'general)
 
-;; TODO: This doesn't appear in modeline
 (use-package avy
   :ensure t
   :defer t
@@ -25,34 +24,6 @@
   (call-interactively #'evil-shift-left)
   (evil-normal-state)
   (evil-visual-restore))
-
-;; (define-minor-mode undo-fu-mode
-;;     "Enables `undo-fu' for the current session."
-;;     :keymap (let ((map (make-sparse-keymap)))
-;;               (define-key map [remap undo] #'undo-fu-only-undo)
-;;               (define-key map [remap redo] #'undo-fu-only-redo)
-;;               (define-key map (kbd "C-_")     #'undo-fu-only-undo)
-;;               (define-key map (kbd "M-_")     #'undo-fu-only-redo)
-;;               (define-key map (kbd "C-M-_")   #'undo-fu-only-redo-all)
-;;               (define-key map (kbd "C-x r u") #'undo-fu-session-save)
-;;               (define-key map (kbd "C-x r U") #'undo-fu-session-recover)
-;;               map)
-;;     :init-value nil
-;;     :global t)
-
-;; (use-package undo-fu
-;;   :ensure t
-;;   :hook (elpaca-after-init . undo-fu-mode)
-;;   :config
-;;   (setq undo-limit 400000
-;;         undo-strong-limit 3000000
-;;         undo-outer-limit 48000000))
-;; 
-;; (use-package undo-fu-session
-;;   :ensure t
-;;   :hook (undo-fu-mode . global-undo-fu-session-mode)
-;;   :config
-;;   (setq undo-fu-session-incompatible-files '("\\.gpg$" "/COMMIT_EDITMSG\\'" "/git-rebase-todo\\'")))
 
 (use-package vundo
   :ensure t
@@ -81,21 +52,24 @@
 
 (setq evil-want-integration t
       evil-want-keybinding nil)
+
 (use-package evil
   :ensure (:wait t)
   :defer t
   :hook (elpaca-after-init . evil-mode)
   :demand t
   :general
-  (:states '(motion normal visual)
+  (:states '(motion normal visual operator)
+           :keymaps 'override
            "SPC"   #'consult-buffer
-           "S-SPC"   #'consult-buffer-other-window
+           "S-SPC"   #'consult-buffer-other-window)
+  (:states '(motion normal visual)
            "s"     #'evil-avy-goto-char-timer
            "gh"    help-map
-           "C-h"   #'evil-window-left
-           "C-j"   #'evil-window-down
-           "C-k"   #'evil-window-up
-           "C-l"   #'evil-window-right
+           ;; "C-h"   #'evil-window-left
+           ;; "C-j"   #'evil-window-down
+           ;; "C-k"   #'evil-window-up
+           ;; "C-l"   #'evil-window-right
            ;; "]a"    #'evil-forward-arg
            ;; "[a"    #'evil-backward-arg
            ;; "]e"    #'flymake-goto-next-error ;; Being overridden by unimpaired?

@@ -187,6 +187,8 @@ so trailing whitespace is not removed.  The properties :foreground,
 ;; (set-face-attribute 'default nil :font "Berkeley Mono-14")
 (set-face-attribute 'default nil :font "Berkeley Mono ExtraCondensed-10")
 
+(use-package stillness-mode
+  :ensure (stillness-mode :host "github.com" :repo "neeasade/stillness-mode.el"))
 
 ;; (use-package doom-themes
 ;;   :ensure t
@@ -351,8 +353,9 @@ so trailing whitespace is not removed.  The properties :foreground,
 ;;   (setq magit-commit-diff-inhibit-same-window t)
 ;;   (current-window-only-mode))
 
+(setq window-resize-pixelwise t)
 (setq project-mode-line t)
-(setq project-mode-line-face 'package-name)
+;; (setq project-mode-line-face 'package-name)
 (setq project-file-history-behavior 'relativize)
 (setq column-number-mode t)
 (line-number-mode)
@@ -360,30 +363,31 @@ so trailing whitespace is not removed.  The properties :foreground,
 
 
 (setq-default mode-line-format '("%e" mode-line-front-space
-                                      (:propertize
-                                       ("" mode-line-mule-info mode-line-client mode-line-modified mode-line-remote
-                                        mode-line-window-dedicated)
-                                       ;; display (min-width (6.0))
-                                       )
-                                      mode-line-frame-identification mode-line-buffer-identification "   "
-                                      mode-line-position anzu--update-mode-line (project-mode-line project-mode-line-format)
-                                      mode-line-format-right-align
-                                      (vc-mode vc-mode) " " mode-line-misc-info flymake-mode-line-counters " "))
+                                 (:propertize
+                                  ("" mode-line-mule-info mode-line-client mode-line-modified mode-line-remote
+                                   mode-line-window-dedicated)
+                                  ;; display (min-width (6.0))
+                                  )
+                                 mode-line-frame-identification mode-line-buffer-identification "   "
+                                 mode-line-position " " (:eval (anzu--update-mode-line)) 
+                                 mode-line-format-right-align
+                                 (project-mode-line project-mode-line-format) " "
+                                 (vc-mode vc-mode) " " mode-line-misc-info flymake-mode-line-counters " "))
 
 
 
-(add-hook 'prog-mode-hook #'(lambda ()
-                              (setq mode-line-format
-                                    '("%e" mode-line-front-space
-                                      (:propertize
-                                       ("" mode-line-mule-info mode-line-client mode-line-modified mode-line-remote
-                                        mode-line-window-dedicated)
-                                       ;; display (min-width (6.0))
-                                       )
-                                      mode-line-frame-identification mode-line-buffer-identification "   "
-                                      mode-line-position anzu--update-mode-line (project-mode-line project-mode-line-format)
-                                      mode-line-format-right-align
-                                      (vc-mode vc-mode) " " mode-line-misc-info flymake-mode-line-counters " "))))
+;; (add-hook 'prog-mode-hook #'(lambda ()
+;;                               (setq mode-line-format
+;;                                     '("%e" mode-line-front-space
+;;                                       (:propertize
+;;                                        ("" mode-line-mule-info mode-line-client mode-line-modified mode-line-remote
+;;                                         mode-line-window-dedicated)
+;;                                        ;; display (min-width (6.0))
+;;                                        )
+;;                                       mode-line-frame-identification mode-line-buffer-identification "   "
+;;                                       mode-line-position (:eval (anzu--update-mode-line)) (project-mode-line project-mode-line-format)
+;;                                       mode-line-format-right-align
+;;                                       (vc-mode vc-mode) " " mode-line-misc-info flymake-mode-line-counters " "))))
 
 ;; (setq-default mode-line-format nil)
 ;; (setq mode-line-format nil)

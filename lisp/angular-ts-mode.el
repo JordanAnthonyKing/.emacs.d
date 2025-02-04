@@ -29,9 +29,7 @@
 
 (require 'treesit)
 (require 'sgml-mode)
-
-(declare-function treesit-parser-create "treesit.c")
-(declare-function treesit-node-type "treesit.c")
+(require 'html-mode)
 
 (defcustom angular-ts-mode-indent-offset 2
   "Number of spaces for each indentation step in `angular-ts-mode'."
@@ -69,297 +67,32 @@
      ((node-is "}") parent-bol 0)))
   "Tree-sitter indent rules.")
 
-(defvar angular-ts-mode--font-lock-settings
-  (treesit-font-lock-rules
-   :language 'angular
-   :override t
-   :feature 'comment
-   '((comment) @font-lock-comment-face)
+;; (defvar angular-syntax-table 
+;;   (let ((table (make-syntax-table text-mode-syntax-table)))
+;;     (modify-syntax-entry ?< "(>" table)
+;;     (modify-syntax-entry ?> ")<" table)
+;;     ;; (modify-syntax-entry ?< " " table)
+;;     ;; (modify-syntax-entry ?> " " table)
+;;     (modify-syntax-entry ?: "_" table)
+;;     (modify-syntax-entry ?_ "_" table)
+;;     (modify-syntax-entry ?. " " table)
+;;     table))
 
-   :language 'angular
-   :override t
-   :feature 'keyword
-   '("doctype" @font-lock-keyword-face)
-
-   :language 'angular
-   :override t
-   :feature 'definition
-   '((tag_name) @font-lock-function-name-face)
-
-   :language 'angular
-   :override t
-   :feature 'string
-   '((quoted_attribute_value) @font-lock-string-face)
-
-   :language 'angular
-   :override t
-   :feature 'property
-   '((attribute_name) @font-lock-property-name-face)
-
-   :language 'angular
-   :override t
-   :feature 'identifier
-   '((identifier) @font-lock-variable-name-face)
-
-   :language 'angular
-   :override t
-   :feature 'pipe_operator
-   '((pipe_operator) @font-lock-operator-face)
-
-   :language 'angular
-   :override t
-   :feature 'string
-   '([(string) (static_member_expression)] @font-lock-string-face)
-
-   :language 'angular
-   :override t
-   :feature 'number
-   '((number) @font-lock-number-face)
-
-   :language 'angular
-   :override t
-   :feature 'pipe_call
-   '((pipe_call name: (identifier) @font-lock-function-call-face))
-
-   :language 'angular
-   :override t
-   :feature 'structural_directive
-   '((structural_directive
-      "*" @font-lock-keyword-face
-      (identifier) @font-lock-keyword-face))
-
-   :language 'angular
-   :override t
-   :feature 'attribute
-   '((attribute
-      (attribute_name) @font-lock-property-name-face
-      (:match "#.*" @font-lock-property-name-face)))
-
-   :language 'angular
-   :override t
-   :feature 'binding_name
-   '((binding_name
-      (identifier) @font-lock-keyword-face))
-
-   :language 'angular
-   :override t
-   :feature 'event_binding
-   '((event_binding
-      (binding_name
-       (identifier) @font-lock-keyword-face)))
-
-   :language 'angular
-   :override t
-   :feature 'event_binding
-   '((event_binding
-      "\"" @font-lock-delimiter-face))
-
-   :language 'angular
-   :override t
-   :feature 'property_binding
-   '((property_binding
-      "\"" @font-lock-delimiter-face))
-
-   :language 'angular
-   :override t
-   :feature 'structural_assignment
-   '((structural_assignment
-      operator: (identifier) @font-lock-keyword-face))
-
-   :language 'angular
-   :override t
-   :feature 'member_expression
-   '((member_expression
-      property: (identifier) @font-lock-property-name-face))
-
-   :language 'angular
-   :override t
-   :feature 'call_expression
-   '((call_expression
-      function: (identifier) @font-lock-function-call-face))
-
-   :language 'angular
-   :override t
-   :feature 'call_expression
-   '((call_expression
-      function: ((identifier) @font-lock-builtin-face
-                 (:match "\$any" @font-lock-builtin-face))))
-
-   :language 'angular
-   :override t
-   :feature 'pair
-   '((pair
-      key: ((identifier) @font-lock-builtin-face
-            (:match "\$implicit" @font-lock-builtin-face))))
-
-   :language 'angular
-   :override t
-   :feature 'control_keyword
-   '(((control_keyword) @font-lock-keyword-face
-     (:match "for\\|empty" @font-lock-keyword-face)))
-
-   :language 'angular
-   :override t
-   :feature 'control_keyword
-   '(((control_keyword) @font-lock-keyword-face
-     (:match "if\\|else\\|switch\\|case\\|default" @font-lock-keyword-face)))
-
-   :language 'angular
-   :override t
-   :feature 'control_keyword
-   '(((control_keyword) @font-lock-keyword-face
-     (:match "defer\\|placeholder\\|loading" @font-lock-keyword-face)))
-
-   :language 'angular
-   :override t
-   :feature 'control_keyword
-   '(((control_keyword) @font-lock-warning-face
-     (:match "error" @font-lock-warning-face)))
-
-   :language 'angular
-   :override t
-   :feature 'special_keyword
-   '((special_keyword) @font-lock-keyword-face)
-
-   :language 'angular
-   :override t
-   :feature 'boolean
-   '(((identifier) @font-lock-builtin-face
-     (:match "true\\|false" @font-lock-builtin-face)))
-
-   :language 'angular
-   :override t
-   :feature 'builtin
-   '(((identifier) @font-lock-builtin-face
-     (:match "\\(this\\|\\$event\\)" @font-lock-builtin-face)))
-
-   :language 'angular
-   :override t
-   :feature 'builtin
-   '(((identifier) @font-lock-builtin-face
-     (:match "null" @font-lock-builtin-face)))
-
-   :language 'angular
-   :override t
-   :feature 'ternary
-   '([(ternary_operator) (conditional_operator)] @font-lock-operator-face)
-
-   :language 'angular
-   :override t
-   :feature 'bracket
-   '(["(" ")" "[" "]" "{" "}" "@"] @font-lock-bracket-face)
-
-   :language 'angular
-   :override t
-   :feature 'two_way_binding
-   '(["[(" ")]"] @font-lock-bracket-face)
-
-   :language 'angular
-   :override t
-   :feature 'two_way_binding
-   '(["{{" "}}"] @font-lock-escape-face)
-
-   :language 'angular
-   :override t
-   :feature 'inline
-   '([";" "." "," "?."] @font-lock-delimiter-face)
-
-   :language 'angular
-   :override t
-   :feature 'two_way_binding
-   '((nullish_coalescing_expression (coalescing_operator) @font-lock-operator-face))
-
-   :language 'angular
-   :override t
-   :feature 'concatenation_expression
-   '((concatenation_expression "+" @font-lock-operator-face))
-
-   :language 'angular
-   :override t
-   :feature 'icu
-   '((icu_clause) @font-lock-operator-face)
-
-   :language 'angular
-   :override t
-   :feature 'icu
-   '((icu_category) @font-lock-keyword-face)
-
-   :language 'angular
-   :override t
-   :feature 'binary_expression
-   '((binary_expression
-     ["-" "&&" "+" "<" "<=" "=" "==" "===" "!=" "!=="
-      ">" ">=" "*" "/" "||" "%"] @font-lock-operator-face))
-  )
-  "Tree-sitter font-lock settings for `angular-ts-mode'.")
-
-(defun angular-ts-mode--defun-name (node)
-  "Return the defun name of NODE.
-Return nil if there is no name or if NODE is not a defun node."
-  (when (equal (treesit-node-type node) "tag_name")
-    (treesit-node-text node t)))
-
-(defun angular-ts-mode--setup ()
-  "Set up `angular-ts-mode' for use with Tree-sitter."
-  (unless (treesit-ready-p 'angular)
-    (error "Tree-sitter for Angular isn't available"))
-
-  (treesit-parser-create 'angular)
-
-  ;; Indent.
-  (setq-local treesit-simple-indent-rules angular-ts-mode--indent-rules)
-
-  ;; Navigation.
-  (setq-local treesit-defun-type-regexp "element")
-  (setq-local treesit-defun-name-function #'angular-ts-mode--defun-name)
-
-  (setq-local treesit-thing-settings
-              `((angular
-                 (sexp ,(regexp-opt '("element"
-                                      "text"
-                                      "attribute"
-                                      "value")))
-                 (sentence "tag")
-                 (text ,(regexp-opt '("comment" "text"))))))
-
-  ;; Font-lock.
-  (setq-local treesit-font-lock-settings angular-ts-mode--font-lock-settings)
-  (setq-local treesit-font-lock-feature-list
-              '((comment keyword definition property string pipe_call pipe_operator
-                          structural_directive attribute binding_name event_binding
-                          property_binding structural_assignment member_expression
-                          call_expression pair control_keyword special_keyword
-                          boolean builtin ternary bracket two_way_binding
-                          concatenation_expression icu binary_expression)))
-
-  ;; Imenu.
-  (setq-local treesit-simple-imenu-settings
-              '(("Element" "\\`tag_name\\'" nil nil)))
-
-  ;; TODO:
-  ;; Outline minor mode.
-  (setq-local treesit-outline-predicate "\\`element\\'")
-  ;; `html-ts-mode' inherits from `html-mode' that sets
-  ;; regexp-based outline variables.  So need to restore
-  ;; the default values of outline variables to be able
-  ;; to use `treesit-outline-predicate' above.
-   (kill-local-variable 'outline-regexp)
-   (kill-local-variable 'outline-heading-end-regexp)
-   (kill-local-variable 'outline-level)
-
-  (treesit-major-mode-setup))
-
-;;;###autoload
-(define-derived-mode angular-ts-mode html-mode "Angular"
+(define-derived-mode angular-ts-mode html-ts-mode "Angular"
   "Major mode for editing Angular flavoured HTML, powered by tree-sitter."
   :group 'angular
-  (angular-ts-mode--setup))
+  :syntax-table angular-syntax-table
+  (setq-local treesit-simple-indent-rules angular-ts-mode--indent-rules)
 
-(derived-mode-add-parents 'angular-ts-mode '(angular-mode))
+  ;; (when (treesit-ready-p 'angular)
+  ;;   (add-to-list 'auto-mode-alist '("\\.component.html" . angular-ts-mode))
+  ;;   (add-to-list 'auto-mode-alist '("\\.container.html" . angular-ts-mode)))
 
-(when (treesit-ready-p 'angular)
-  (add-to-list 'auto-mode-alist '("\\.component\\.html\\'" . angular-ts-mode))
-  (add-to-list 'auto-mode-alist '("\\.container\\.html\\'" . angular-ts-mode)))
+  (add-to-list 'find-sibling-rules
+               '("\\(.+\\)\\.component.html" "\\1.component.ts"))
+  (add-to-list 'find-sibling-rules
+               '("\\(.+\\)\\.container.html" "\\1.container.ts")))
+
 
 (provide 'angular-ts-mode)
 

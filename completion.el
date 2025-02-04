@@ -87,7 +87,7 @@
    [remap goto-line]                         #'consult-goto-line
    [remap imenu]                             #'consult-imenu
    [remap occur]                             #'consult-line
-   [remap isearch]                           #'consult-line
+   [remap isearch-forward]                   #'consult-line
    [remap Info-search]                       #'consult-info
    [remap locate]                            #'consult-locate
    [remap load-theme]                        #'consult-theme
@@ -104,16 +104,7 @@
    [remap next-matching-history-element]     #'consult-history
    [remap previous-matching-history-element] #'consult-history)
   :general
-  ("C-c r" #'consult-ripgrep
-   "C-c f" #'consult-find
-   "C-c g" #'consult-grep
-   "C-c G" #'consult-git-grep
-   "C-c i" #'consult-imenu
-   "C-c I" #'consult-imenu-multi
-   "C-c r" #'consult-ripgrep
-   "C-c l" #'consult-line
-   "C-c L" #'consult-line-multi
-   "C-c o" #'consult-outline)
+  ("C-c C-c"  'embark-consult-search-map)
   :config
   (setq register-preview-delay 0.5
         register-preview-function #'consult-register-format)
@@ -182,10 +173,10 @@
   (setq which-key-use-C-h-commands nil
         prefix-help-command #'embark-prefix-help-command)
   :config
-  (keymap-set embark-general-map "x" #'xref-find-references)
-  (keymap-set embark-general-map "r" #'consult-ripgrep)
-  (keymap-set embark-general-map "f" #'consult-find)
-  (keymap-set embark-general-map "l" #'consult-line)
+  ;; (keymap-set embark-general-map "x" #'xref-find-references)
+  ;; (keymap-set embark-general-map "r" #'consult-ripgrep)
+  ;; (keymap-set embark-general-map "f" #'consult-find)
+  ;; (keymap-set embark-general-map "l" #'consult-line)
 
   (defun embark-which-key-indicator ()
     "An embark indicator that displays keymaps using which-key.
