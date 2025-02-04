@@ -7,145 +7,26 @@
 (setq display-line-numbers-type 'relative)
 (add-hook 'prog-mode-hook #'display-line-numbers-mode)
 
-;; (defalias 'forward-evil-word 'forward-evil-symbol)
-
-;; (use-package prog-mode
-;;   :ensure nil
-;;   :general
-;;   (:states '(normal visual operator)
-;;            "w" #'forward-evil-symbol))
-
-;; (defmacro debounce! (func &optional delay)
-;;   "Return a debounced version of function FUNC.
-;; 
-;; DELAY defaults to 0.5 seconds."
-;;   `(let ((debounce-timer nil)
-;;          (delay (or ,delay 0.5)))
-;;      (defun ,(intern (concat (symbol-name func) "--debounced")) (&rest args)
-;;        ;; Add the documentation from FUNC with an extra note
-;;        ,(concat
-;;          (documentation func)
-;;          (format "\n\nThis function is debounced -- it runs after a delay of %.3f seconds." delay))
-;;        ;; Add the interactive form from FUNC
-;;        ,(interactive-form func)
-;;        (if (timerp debounce-timer)
-;;            (timer-set-idle-time debounce-timer delay)
-;;          (let ((buf (current-buffer)))
-;;            (setq debounce-timer
-;;                  (run-with-idle-timer
-;;                   delay nil
-;;                   (lambda ()
-;;                     (cancel-timer debounce-timer)
-;;                     (setq debounce-timer nil)
-;;                     (with-current-buffer buf
-;;                       (apply #',func args))))))))))
-
-(require 'treesit)
-
-(defcustom angular-ts-mode-indent-offset 2
-  "Number of spaces for each indentation step in `angular-ts-mode'."
-  :version "29.1"
-  :type 'integer
-  :safe 'integerp
-  :group 'angular)
-
-;; (defun my/find-symbol-in-sibling-file ()
-;;   "Search for the symbol under point in the sibling file determined by 'find-sibling-file'.
-;; If the sibling file isn't open, open it without focusing on it. Display matches using completing-read for filtering."
-;;   (interactive)
-;;   (let* ((symbol (thing-at-point 'symbol t))
-;;          (current-file (buffer-file-name))
-;;          (sibling-file (when current-file
-;;                          (find-sibling-file current-file)))
-;;          (buffer (and sibling-file
-;;                       (or (get-file-buffer sibling-file)
-;;                           (find-file-noselect sibling-file))))
-;;          (matches nil))
-;;     (if (null symbol)
-;;         (message "No symbol under point.")
-;;       (if (null sibling-file)
-;;           (message "No sibling file found.")
-;;         (with-current-buffer buffer
-;;           (goto-char (point-min))
-;;           (while (search-forward symbol nil t)
-;;             (let ((line-content (buffer-substring-no-properties
-;;                                  (line-beginning-position)
-;;                                  (line-end-position))))
-;;               (push line-content matches))))
-;;         (if matches
-;;             (let ((selected (completing-read "Matches: " matches)))
-;;               (message "You selected: %s" selected))
-;;           (message "No matches found for symbol '%s' in sibling file." symbol))))))
-
 ;; TODO: Update me
-(defvar angular-ts-mode--indent-rules
-  `((angular
-     ((parent-is "fragment") column-0 0)
-     ((node-is "/>") parent-bol 0)
-     ((node-is ">") parent-bol 0)
-     ((node-is "end_tag") parent-bol 0)
-     ((parent-is "comment") prev-adaptive-prefix 0)
-     ((parent-is "element") parent-bol angular-ts-mode-indent-offset)
-     ((parent-is "script_element") parent-bol angular-ts-mode-indent-offset)
-     ((parent-is "style_element") parent-bol angular-ts-mode-indent-offset)
-     ((parent-is "start_tag") parent-bol angular-ts-mode-indent-offset)
-     ((parent-is "self_closing_tag") parent-bol angular-ts-mode-indent-offset)
-
-     ;; New rules
-     ;; Indent for statement_block and switch_statement nodes
-     ((node-is "statement_block") parent-bol angular-ts-mode-indent-offset)
-     ((node-is "switch_statement") parent-bol angular-ts-mode-indent-offset)
-
-     ;; Begin block indentation
-     ((node-is "{") parent-bol angular-ts-mode-indent-offset)
-     
-     ;; Branch indentation for closing brace
-     ((node-is "}") parent-bol (- angular-ts-mode-indent-offset))
-     
-     ;; End block indentation
-     ((parent-is "statement_block") parent-bol 0)
-     ((node-is "}") parent-bol 0)))
-  "Tree-sitter indent rules.")
-
-(defvar angular-syntax-table 
-  (let ((table (make-syntax-table text-mode-syntax-table)))
-    (modify-syntax-entry ?< "(>" table)
-    (modify-syntax-entry ?> ")<" table)
-    ;; (modify-syntax-entry ?< " " table)
-    ;; (modify-syntax-entry ?> " " table)
-    (modify-syntax-entry ?: "_" table)
-    (modify-syntax-entry ?_ "_" table)
-    (modify-syntax-entry ?. " " table)
-    table))
-
-;;;###autoload
-(define-derived-mode angular-ts-mode html-ts-mode "Angular"
-  "Major mode for editing Angular flavoured HTML, powered by tree-sitter."
-  :group 'angular
-  :syntax-table angular-syntax-table
-  (setq-local treesit-simple-indent-rules angular-ts-mode--indent-rules)
-
-  (when (treesit-ready-p 'angular)
-    (add-to-list 'auto-mode-alist '("\\.component.html" . angular-ts-mode))
-    (add-to-list 'auto-mode-alist '("\\.container.html" . angular-ts-mode)))
-
-  (add-to-list 'find-sibling-rules
-               '("\\(.+\\)\\.component.html" "\\1.component.ts"))
-  (add-to-list 'find-sibling-rules
-               '("\\(.+\\)\\.container.html" "\\1.container.ts")))
-
-
-(provide 'angular-ts-mode)
-
 (use-package angular-ts-mode
   :ensure nil
+  :defer t
+  :hook (html-mode . #'my-angular-html-hook)
+  :preface
+  (defun my-angular-html-hook ()
+  "Activate `angular-ts-mode` for Angular template files."
+  (when (and buffer-file-name
+             (string-match "\(component\|container\)\.html$" buffer-file-name))
+    (angular-ts-mode)))
+
+;; (add-hook 'html-mode-hook #'my-angular-html-hook)
   :general 
   (:keymaps 'angular-ts-mode-map
             :states 'normal
             "gd" #'xref-find-definitions)
   ;; :config
   ;; (setq dabbrev-abbrev-skip-leading-regexp "\\<")
-    ;; (setq dabbrev-abbrev-char-regexp "\\(\\sw\\|\\s_\\)")
+  ;; (setq dabbrev-abbrev-char-regexp "\\(\\sw\\|\\s_\\)")
   )
 
 (use-package typescript-ts-mode
@@ -162,9 +43,10 @@
   (add-to-list 'find-sibling-rules
                '("\\(.+\\)\\.spec\\.ts\\'" "\\1.ts"))
 
-  (add-to-list 'compilation-error-regexp-alist 'node)
-  (add-to-list 'compilation-error-regexp-alist-alist
-               '(node "at [^ ]+ (\\(.+?\\):\\([[:digit:]]+\\):\\([[:digit:]]+\\)" 1 2 3)))
+  ;; (add-to-list 'compilation-error-regexp-alist 'node)
+  ;; (add-to-list 'compilation-error-regexp-alist-alist
+  ;;              '(node "at [^ ]+ (\\(.+?\\):\\([[:digit:]]+\\):\\([[:digit:]]+\\)" 1 2 3))
+  )
 
 
 ;; TODO: Update angular in treesit langs fork
@@ -179,8 +61,7 @@
   (treesit-langs-grammar-dir (expand-file-name "tree-sitter" user-emacs-directory))
   :config
   (add-to-list 'treesit-extra-load-path treesit-langs-grammar-dir)
-  (add-hook 'angular-ts-mode-hook #'(lambda () (treesit-hl-toggle 'on)))
-  (add-hook 'typescript-ts-mode-hook #'(lambda () (treesit-hl-toggle 'on))))
+  (add-hook 'angular-ts-mode-hook #'(lambda () (treesit-hl-toggle 'on))))
 
 ;; TODO: Add stupid test folders
 (setq project-vc-ignores '("target/" "bin/" "obj/" "node_modules/")
@@ -188,13 +69,30 @@
                                       "project.clj" "pom.xml" "package.json"
                                       "angular.json" "Makefile" "README.org"
                                       "README.md"))
+
 (use-package markdown-mode
   :ensure t)
+
+;; (use-package lsp-copilot
+;;   :ensure (lsp-copilot :host "github.com" :repo "jadestrong/lsp-copilot"
+;;                        :files ("lsp-copilot.el" "lsp-copilot.exe" "./target/release/lsp-copilot.exe")
+;;                        :pre-build (("cargo" "build" "--release") ("cp" "./target/release/lsp-copilot" "./")))
+;;   :defer t
+;;   :hook (tsx-ts-mode . #'lsp-copilot-mode)
+;;   :hook (js-ts-mode . #'lsp-copilot-mode)
+;;   :hook (typescript-mode . #'lsp-copilot-mode)
+;;   :hook (typescript-ts-mode . #'lsp-copilot-mode)
+;;   :hook (angular-ts-mode . #'lsp-copilot-mode)
+;;   :config
+;;   (setq lsp-copilot-diagnostics-provider :flymake))
 
 (use-package eglot
   :ensure nil
   :commands (eglot eglot-ensure)
   :hook (typescript-ts-mode . eglot-ensure)
+  :hook (angular-ts-mode . eglot-ensure)
+  :hook (js-mode . eglot-ensure)
+  :hook (js-ts-mode . eglot-ensure)
   :defer t
   :init
   (setq eglot-sync-connect 1
@@ -205,7 +103,16 @@
   ;;              '(angular-ts-mode . ,(eglot-alternatives
   ;;                                   '(("vscode-html-language-server" "--stdio")
   ;;                                     ("html-languageserver" "--stdio")))))
-  ;; (setq eglot-stay-out-of '(xref))
+
+  (add-to-list 'eglot-server-programs
+               '(angular-ts-mode "node"
+                                 "/usr/lib/node_modules/@angular/language-server"
+                                 "--ngProbeLocations"
+                                 "/usr/lib/node_modules"
+                                 "--tsProbeLocations"
+                                 "/usr/lib/node_modules"
+                                 "--stdio"))
+
   (cl-callf plist-put eglot-events-buffer-config :size 0))
 
 ;; TODO: Embark
@@ -213,8 +120,6 @@
   :ensure t
   :commands consult-eglot-symbols
   :defer t)
-
-;; TODO: Replace with js-pkg
 
 (use-package js-pkg-mode
   :ensure (js-pkg-mode :host "github.com" :repo "https://github.com/ovistoica/js-pkg-mode")
@@ -264,7 +169,7 @@
 (use-package flymake
   :ensure nil
   :defer t
-  :hook ((angular-ts-mode typescript-ts-mode sgml-mode) . flymake-mode)
+  :hook (prog-mode . flymake-mode)
   :config
   ;; (setq flymake-show-diagnostics-at-end-of-line 'short)
 
@@ -500,8 +405,8 @@
 (use-package prettier
   :ensure t
   :defer t
-  :hook ((typescript-ts-mode . prettier-mode)
-         (angular-ts-mode . prettier-mode))
+  :hook (typescript-ts-mode . prettier-mode)
+  :hook (angular-ts-mode . prettier-mode)
   :config
   (add-to-list 'prettier-major-mode-parsers '(angular-ts-mode angular))
   (add-to-list 'prettier-major-mode-parsers '(typescript-ts-mode babel-ts)))
@@ -524,9 +429,20 @@
   ;; :custom
   ;; (indent-bars-prefer-character "-")
   :init
-  (setq indent-bars-prefer-character t
-        indent-bars-no-stipple-char ?\│
-        indent-bars-color-by-depth nil
-        ;; indent-bars-color '("#595959")
-        indent-bars-color '("#ddd")
-        indent-bars-highlight-current-depth '(:color "#000000")))
+  (advice-add 'line-move-to-column :around
+              (defun my/indent-bars-prevent-passing-newline (orig col &rest r)
+	            (if-let ((indent-bars-mode)
+		                 (nlp (line-end-position))
+		                 (dprop (get-text-property nlp 'display))
+		                 ((seq-contains-p dprop ?\n))
+		                 ((> col (- nlp (point)))))
+	                (goto-char nlp)
+	              (apply orig col r))))
+
+  (setq ;; indent-bars-prefer-character t
+   ;; indent-bars-no-stipple-char ?\┃
+   indent-bars-color-by-depth nil
+   indent-bars-starting-column 0
+   ;; indent-bars-color '("#595959")
+   indent-bars-color '("#ddd")
+   indent-bars-highlight-current-depth '(:color "#000000")))

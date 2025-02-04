@@ -259,7 +259,7 @@ which corresponds to a minimum contrast in relative luminance of
 ;;;; Code mappings
 
       (bracket fg-dim)
-      (builtin fg-main)
+      (builtin blue)
       (comment fg-dim)
       (constant fg-main)
       (delimiter fg-main)
