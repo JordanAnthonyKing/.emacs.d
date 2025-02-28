@@ -99,7 +99,7 @@
    [remap switch-to-buffer-other-tab]        #'consult-buffer-other-tab
    [remap yank-pop]                          #'consult-yank-pop
    [remap repeat-complex-command]            #'consult-complex-command
-   [remap project-switch-to-buffer]          #'consult-project-bruffer
+   [remap project-switch-to-buffer]          #'consult-project-buffer
    [remap isearch-edit-string]               #'consult-isearch-history
    [remap next-matching-history-element]     #'consult-history
    [remap previous-matching-history-element] #'consult-history)
@@ -169,6 +169,8 @@
              "M-;" #'embark-dwim
              "C-c C-;" #'embark-export
              "C-c C-l" #'embark-collect)
+  (:keymaps 'embark-consult-search-map
+            "f" #'consult-fd)
   :init
   (setq which-key-use-C-h-commands nil
         prefix-help-command #'embark-prefix-help-command)

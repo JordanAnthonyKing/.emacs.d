@@ -81,11 +81,11 @@
   (:states 'visual
            "<"     #'+evil/shift-left
            ">"     #'+evil/shift-right)
-  (:states 'insert
-           "C-h"   #'evil-backward-char
-           "C-l"   #'evil-forward-char
-           "C-j"   #'evil-next-line
-           "C-k"   #'evil-previous-char)
+  ;; (:states 'insert
+  ;;          "C-h"   #'evil-backward-char
+  ;;          "C-l"   #'evil-forward-char
+  ;;          "C-j"   #'evil-next-line
+  ;;          "C-k"   #'evil-previous-char)
   (:keymaps 'evil-window-map
             "d" #'evil-window-delete)
   :custom
