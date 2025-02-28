@@ -1,12 +1,30 @@
 ;;; post-init.el --- DESCRIPTION -*- no-byte-compile: t; lexical-binding: t; -*-
 
-;; (add-hook 'elpaca-after-init-hook 'global-auto-revert-mode)
-;; TODO: Defer this to consult-recentf like Doom
-(add-hook 'elpaca-after-init-hook 'recentf-mode)
-(add-hook 'elpaca-after-init-hook 'savehist-mode)
-(add-hook 'elpaca-after-init-hook 'save-place-mode)
+;; Auto-revert in Emacs is a feature that automatically updates the
+;; contents of a buffer to reflect changes made to the underlying file
+;; on disk.
+(add-hook 'elpaca-after-init-hook #'global-auto-revert-mode)
 
-(set-display-table-slot standard-display-table 0 ?\ ) 
+;; recentf is an Emacs package that maintains a list of recently
+;; accessed files, making it easier to reopen files you have worked on
+;; recently.
+(add-hook 'elpaca-after-init-hook #'(lambda()
+                               (let ((inhibit-message t))
+                                 (recentf-mode 1))))
+(add-hook 'kill-emacs-hook #'recentf-cleanup)
+
+;; savehist is an Emacs feature that preserves the minibuffer history between
+;; sessions. It saves the history of inputs in the minibuffer, such as commands,
+;; search strings, and other prompts, to a file. This allows users to retain
+;; their minibuffer history across Emacs restarts.
+(add-hook 'elpaca-after-init-hook #'savehist-mode)
+
+;; save-place-mode enables Emacs to remember the last location within a file
+;; upon reopening. This feature is particularly beneficial for resuming work at
+;; the precise point where you previously left off.
+(add-hook 'elpaca-after-init-hook #'save-place-mode)
+
+;; (set-display-table-slot standard-display-table 0 ?\ ) 
 
 ;; TODO: Make this work wtih minimal emacs paths
 (setq auto-save-file-name-transforms `((".*" ,(expand-file-name ".emacs.d/var/autosaves/\\1" minimal-emacs-user-directory) t)))
@@ -27,6 +45,18 @@
 (setq widget-push-button-prefix " ")
 (setq widget-push-button-suffix " ")
 
+;; (use-package compile-angel
+;;   :ensure t
+;;   :demand t
+;;   :config
+;;   ;; Set `compile-angel-verbose` to nil to suppress output from compile-angel.
+;;   ;; Drawback: The minibuffer will not display compile-angel's actions.
+;;   (setq compile-angel-verbose t)
+;; 
+;;   (compile-angel-on-load-mode)
+;;   (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode))
+
+
 ;; (use-package ultra-scroll
 ;;   :ensure (ultra-scroll :host "github.com" :repo "jdtsmith/ultra-scroll")
 ;;   :init
@@ -40,6 +70,8 @@
 ;; Add the local lisp directory to the load-path
 (add-to-list 'load-path (expand-file-name "themes" minimal-emacs-user-directory))
 (add-to-list 'load-path (expand-file-name "lisp" minimal-emacs-user-directory))
+
+
 
 ;; (use-package nano-theme
 ;;   :ensure nil
