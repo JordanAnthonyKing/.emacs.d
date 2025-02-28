@@ -59,56 +59,56 @@
 ;;   :ensure nil
 ;;   :load-path "lisp/")
 
-(use-package svg-face-tag-mode
-  :ensure nil
-  :load-path "lisp/"
-  :init
-(defun my-svg-tag-make (tag &rest args)
-  "Return an SVG tag displaying TAG with explicit color parameters.
-ARGS are passed to `svg-lib-tag' with explicit handling for:
-  :foreground (string) -- the desired foreground color,
-  :background (string) -- the desired background color,
-  :inverse (bool)     -- if non-nil, swaps the colors,
-  :beg (integer)      -- first index of TAG substring to display (default 0),
-  :end (integer)      -- last index of TAG substring to display.
-Other keyword arguments in ARGS are passed along to `svg-lib-tag'.
-
-Note that this function does not use any face attribute lookup (unlike
-`svg-tag-make`) and it preserves the TAG string exactly as provided,
-so trailing whitespace is not removed.  The properties :foreground,
-:background, :stroke, and :font-weight are overwritten.
-"
-  (let* ((foreground (plist-get args :foreground))
-         (background (plist-get args :background))
-         (inverse    (plist-get args :inverse))
-         ;; Do NOT trim the tag string so that any trailing whitespace is preserved.
-         (tag tag)
-         (beg (or (plist-get args :beg) 0))
-         (end (plist-get args :end))
-         ;; Remove any color parameters from ARGS so they don't override ours.
-         (args (svg-tag--plist-delete args 'foreground))
-         (args (svg-tag--plist-delete args 'background))
-         (args (svg-tag--plist-delete args 'stroke))
-         (args (svg-tag--plist-delete args 'font-weight)))
-    (if inverse
-        (apply #'svg-lib-tag (substring tag beg end) nil
-               :stroke 0
-               :font-weight 'semibold
-               :foreground background
-               :background foreground
-               args)
-      (apply #'svg-lib-tag (substring tag beg end) nil
-             :stroke 2
-             :font-weight 'regular
-             :foreground foreground
-             :background background
-             args))))
-
-  (setq svg-face-tag-faces
-        '((magit-hash . (lambda (text) (my-svg-tag-make text :padding 1 :radius 0 :background "red" :font-size 9)))))
-  
-
-  )
+;; (use-package svg-face-tag-mode
+;;   :ensure nil
+;;   :load-path "lisp/"
+;;   :init
+;; (defun my-svg-tag-make (tag &rest args)
+;;   "Return an SVG tag displaying TAG with explicit color parameters.
+;; ARGS are passed to `svg-lib-tag' with explicit handling for:
+;;   :foreground (string) -- the desired foreground color,
+;;   :background (string) -- the desired background color,
+;;   :inverse (bool)     -- if non-nil, swaps the colors,
+;;   :beg (integer)      -- first index of TAG substring to display (default 0),
+;;   :end (integer)      -- last index of TAG substring to display.
+;; Other keyword arguments in ARGS are passed along to `svg-lib-tag'.
+;; 
+;; Note that this function does not use any face attribute lookup (unlike
+;; `svg-tag-make`) and it preserves the TAG string exactly as provided,
+;; so trailing whitespace is not removed.  The properties :foreground,
+;; :background, :stroke, and :font-weight are overwritten.
+;; "
+;;   (let* ((foreground (plist-get args :foreground))
+;;          (background (plist-get args :background))
+;;          (inverse    (plist-get args :inverse))
+;;          ;; Do NOT trim the tag string so that any trailing whitespace is preserved.
+;;          (tag tag)
+;;          (beg (or (plist-get args :beg) 0))
+;;          (end (plist-get args :end))
+;;          ;; Remove any color parameters from ARGS so they don't override ours.
+;;          (args (svg-tag--plist-delete args 'foreground))
+;;          (args (svg-tag--plist-delete args 'background))
+;;          (args (svg-tag--plist-delete args 'stroke))
+;;          (args (svg-tag--plist-delete args 'font-weight)))
+;;     (if inverse
+;;         (apply #'svg-lib-tag (substring tag beg end) nil
+;;                :stroke 0
+;;                :font-weight 'semibold
+;;                :foreground background
+;;                :background foreground
+;;                args)
+;;       (apply #'svg-lib-tag (substring tag beg end) nil
+;;              :stroke 2
+;;              :font-weight 'regular
+;;              :foreground foreground
+;;              :background background
+;;              args))))
+;; 
+;;   (setq svg-face-tag-faces
+;;         '((magit-hash . (lambda (text) (my-svg-tag-make text :padding 1 :radius 0 :background "red" :font-size 9)))))
+;;   
+;; 
+;;   )
 
 (use-package modus-themes
   :ensure nil
@@ -188,7 +188,8 @@ so trailing whitespace is not removed.  The properties :foreground,
 (set-face-attribute 'default nil :font "Berkeley Mono ExtraCondensed-10")
 
 (use-package stillness-mode
-  :ensure (stillness-mode :host "github.com" :repo "neeasade/stillness-mode.el"))
+  :ensure (stillness-mode :host "github.com" :repo "neeasade/stillness-mode.el")
+  :hook (elpaca-after-init . stillness-mode))
 
 ;; (use-package doom-themes
 ;;   :ensure t
@@ -328,20 +329,20 @@ so trailing whitespace is not removed.  The properties :foreground,
 ;;   :defer t
 ;;   :hook (elpaca-after-init . tab-bar-echo-area-mode))
 
-;; (use-package otpp
-;;   :ensure t
-;;   ;; :after project
-;;   :init
-;;   ;; If you like to define some aliases for better user experience
-;;   (defalias 'one-tab-per-project-mode 'otpp-mode)
-;;   (defalias 'one-tab-per-project-override-mode 'otpp-override-mode)
-;;   (setq otpp-preserve-non-otpp-tabs nil)
-;;   (setq tab-bar-show nil)
-;;   ;; Enable `otpp-mode` globally
-;;   (otpp-mode 1)
-;;   ;; If you want to advice the commands in `otpp-override-commands`
-;;   ;; to be run in the current's tab (so, current project's) root directory
-;;   (otpp-override-mode 1))
+(use-package otpp
+  :ensure t
+  ;; :after project
+  :init
+  ;; If you like to define some aliases for better user experience
+  (defalias 'one-tab-per-project-mode 'otpp-mode)
+  (defalias 'one-tab-per-project-override-mode 'otpp-override-mode)
+  (setq otpp-preserve-non-otpp-tabs nil)
+  ;; (setq tab-bar-show nil)
+  ;; Enable `otpp-mode` globally
+  (otpp-mode 1)
+  ;; If you want to advice the commands in `otpp-override-commands`
+  ;; to be run in the current's tab (so, current project's) root directory
+  (otpp-override-mode 1))
 
 ;; (use-package current-window-only
 ;;   :ensure (current-window-only
@@ -372,7 +373,8 @@ so trailing whitespace is not removed.  The properties :foreground,
                                  mode-line-position " " (:eval (anzu--update-mode-line)) 
                                  mode-line-format-right-align
                                  (project-mode-line project-mode-line-format) " "
-                                 (vc-mode vc-mode) " " mode-line-misc-info flymake-mode-line-counters " "))
+                                 (vc-mode vc-mode) " " mode-line-misc-info flymake-mode-line-counters " ")
+              )
 
 
 

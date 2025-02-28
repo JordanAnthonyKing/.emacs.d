@@ -29,7 +29,7 @@ This variable holds a list Emacs UI features that can be enabled:
 Each feature in the list corresponds to a specific UI component that can be
 turned on.")
 
-(defvar minimal-emacs-frame-title-format "%b – Emacs"
+(defvar minimal-emacs-frame-title-format '("GNU Emacs @ " system-name)
   "Template for displaying the title bar of visible and iconified frame.")
 
 (defvar minimal-emacs-debug nil
@@ -266,8 +266,8 @@ minimalistic appearance during startup.")
 
 ;;; UI elements
 
-;; (setq frame-title-format minimal-emacs-frame-title-format
-;;       icon-title-format minimal-emacs-frame-title-format)
+(setq frame-title-format minimal-emacs-frame-title-format
+      icon-title-format minimal-emacs-frame-title-format)
 
 ;; Disable startup screens and messages
 (setq inhibit-splash-screen t)
