@@ -91,6 +91,7 @@
   :custom
   ;; TODO: Investigate this
   (evil-undo-system 'undo-redo)
+  (evil-want-Y-yank-to-eol t)
   :init
   (setq evil-undo-system 'undo-fu
         evil-ex-search-vim-style-regexp t
@@ -106,6 +107,10 @@
   ;; (setq evil-undo-system 'undo-fu)
   (evil-select-search-module 'evil-search-module 'evil-search)
   (setq evil-visual-update-x-selection-p nil)
+
+  (defun save-and-kill-this-buffer()(interactive)(save-buffer)(kill-current-buffer))
+  (evil-ex-define-cmd "wq" 'save-and-kill-this-buffer)
+  (evil-ex-define-cmd "q"  'kill-current-buffer)
 
   (add-hook 'after-change-major-mode-hook
             (lambda ()

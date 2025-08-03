@@ -29,7 +29,9 @@
 
 (require 'treesit)
 (require 'sgml-mode)
-(require 'html-mode)
+
+(declare-function treesit-parser-create "treesit.c")
+(declare-function treesit-node-type "treesit.c")
 
 (defcustom angular-ts-mode-indent-offset 2
   "Number of spaces for each indentation step in `angular-ts-mode'."
@@ -78,21 +80,63 @@
 ;;     (modify-syntax-entry ?. " " table)
 ;;     table))
 
-(define-derived-mode angular-ts-mode html-ts-mode "Angular"
+(define-derived-mode angular-ts-mode html-mode "Angular"
   "Major mode for editing Angular flavoured HTML, powered by tree-sitter."
   :group 'angular
-  :syntax-table angular-syntax-table
+
+  (unless (treesit-ready-p 'angular)
+    (error "Tree-sitter for Angular isn't available"))
+
+  (setq treesit-primary-parser (treesit-parser-create 'angular))
+
+  ;; :syntax-table angular-syntax-table
   (setq-local treesit-simple-indent-rules angular-ts-mode--indent-rules)
 
+  ;; Navigation.
+  (setq-local treesit-defun-type-regexp "element")
+
+  (setq-local treesit-defun-name-function #'html-ts-mode--defun-name)
+
+  (setq-local treesit-thing-settings
+              `((html
+                 (sexp ,(regexp-opt '("element"
+                                      "text"
+                                      "attribute"
+                                      "value")))
+                 (sexp-list ,(regexp-opt '("element")) 'symbols)
+                 (sentence "tag")
+                 (text ,(regexp-opt '("comment" "text"))))))
+
+
+  ;; Imenu.
+  (setq-local treesit-simple-imenu-settings
+              '(("Element" "\\`tag_name\\'" nil nil)))
+
+  ;; Outline minor mode.
+  (setq-local treesit-outline-predicate "\\`element\\'")
+  ;; `html-ts-mode' inherits from `html-mode' that sets
+  ;; regexp-based outline variables.  So need to restore
+  ;; the default values of outline variables to be able
+  ;; to use `treesit-outline-predicate' above.
+  (kill-local-variable 'outline-regexp)
+  (kill-local-variable 'outline-heading-end-regexp)
+  (kill-local-variable 'outline-level)
+
+  (setq-local tab-width angular-ts-mode-indent-offset)
+
   ;; (when (treesit-ready-p 'angular)
-  ;;   (add-to-list 'auto-mode-alist '("\\.component.html" . angular-ts-mode))
-  ;;   (add-to-list 'auto-mode-alist '("\\.container.html" . angular-ts-mode)))
+  ;;   (add-to-list 'auto-mode-alist '("\\.component.html\\'" . angular-ts-mode))
+  ;;   (add-to-list 'auto-mode-alist '("\\.container.html\\'" . angular-ts-mode)))
 
   (add-to-list 'find-sibling-rules
                '("\\(.+\\)\\.component.html" "\\1.component.ts"))
   (add-to-list 'find-sibling-rules
-               '("\\(.+\\)\\.container.html" "\\1.container.ts")))
+               '("\\(.+\\)\\.container.html" "\\1.container.ts"))
 
+  (treesit-major-mode-setup))
+
+(if (treesit-ready-p 'angular)
+    (add-to-list 'auto-mode-alist '("\\.component\\.html\\'" . angular-ts-mode)))
 
 (provide 'angular-ts-mode)
 

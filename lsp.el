@@ -6,25 +6,23 @@
 ;; (setq display-line-numbers-current-absolute nil)
 (setq display-line-numbers-type 'relative)
 (add-hook 'prog-mode-hook #'display-line-numbers-mode)
+(add-hook 'angular-ts-mode-hook #'display-line-numbers-mode)
+(add-hook 'prog-mode-hook #'hl-line-mode)
+(add-hook 'angular-ts-mode-hook #'hl-line-mode)
 
 ;; TODO: Update me
 (use-package angular-ts-mode
   :ensure nil
-  :defer t
-  :hook (html-mode . #'my-angular-html-hook)
-  :preface
-  (defun my-angular-html-hook ()
-  "Activate `angular-ts-mode` for Angular template files."
-  (when (and buffer-file-name
-             (string-match "\(component\|container\)\.html$" buffer-file-name))
-    (angular-ts-mode)))
-
-;; (add-hook 'html-mode-hook #'my-angular-html-hook)
-  :general 
+  :load-path "lisp/"
+  :defer nil
+  :general
   (:keymaps 'angular-ts-mode-map
             :states 'normal
             "gd" #'xref-find-definitions)
-  ;; :config
+  :config
+  (add-hook 'angular-ts-mode-hook '(lambda ()
+                                     (setq indent-bars-spacing-override 2)
+                                     (indent-bars-mode t)))
   ;; (setq dabbrev-abbrev-skip-leading-regexp "\\<")
   ;; (setq dabbrev-abbrev-char-regexp "\\(\\sw\\|\\s_\\)")
   )
@@ -68,36 +66,54 @@
       project-vc-extra-root-markers '(".project" "go.mod" "Cargo.toml"
                                       "project.clj" "pom.xml" "package.json"
                                       "angular.json" "Makefile" "README.org"
-                                      "README.md"))
+                                      "README.md" "XSight.sln"))
 
 (use-package markdown-mode
   :ensure t)
 
-;; (use-package lsp-copilot
-;;   :ensure (lsp-copilot :host "github.com" :repo "jadestrong/lsp-copilot"
-;;                        :files ("lsp-copilot.el" "lsp-copilot.exe" "./target/release/lsp-copilot.exe")
-;;                        :pre-build (("cargo" "build" "--release") ("cp" "./target/release/lsp-copilot" "./")))
+;; (use-package lsp-proxy
+;;   :ensure (lsp-proxy :host "github.com" :repo "jadestrong/lsp-proxy" 
+;;                        :files ("lsp-proxy.el" "lsp-proxy.exe" "./target/release/lsp-proxy.exe")
+;;                        :pre-build (("cargo" "build" "--release") ("cp" "./target/release/lsp-proxy" "./")))
 ;;   :defer t
-;;   :hook (tsx-ts-mode . #'lsp-copilot-mode)
-;;   :hook (js-ts-mode . #'lsp-copilot-mode)
-;;   :hook (typescript-mode . #'lsp-copilot-mode)
-;;   :hook (typescript-ts-mode . #'lsp-copilot-mode)
-;;   :hook (angular-ts-mode . #'lsp-copilot-mode)
-;;   :config
-;;   (setq lsp-copilot-diagnostics-provider :flymake))
+;;   :hook (tsx-ts-mode . #'lsp-proxy-mode)
+;;   :hook (js-ts-mode . #'lsp-proxy-mode)
+;;   :hook (typescript-mode . #'lsp-proxy-mode)
+;;   :hook (typescript-ts-mode . #'lsp-proxy-mode)
+;;   :hook (angular-ts-mode . #'lsp-proxy-mode)
+;;   :init
+;;   (setq lsp-proxy-diagnostics-provider :flymake))
+
+(use-package lsp-mode
+  :ensure t
+  :defer t
+  :commands (lsp)
+  ;; :hook (csharp-mode lsp)
+  ;; :hook (csharp-ts-mode lsp)
+  :config
+  (setq lsp-csharp-omnisharp-enable-decompilation-support t
+        lsp-modeline-code-actions-enable nil
+        lsp-modeline-diagnostics-enable t
+        lsp-modeline-code-actions-segments nil
+        lsp-headerline-breadcrumb-segments '(file symbols)))
 
 (use-package eglot
   :ensure nil
+  :defer t
   :commands (eglot eglot-ensure)
   :hook (typescript-ts-mode . eglot-ensure)
   :hook (angular-ts-mode . eglot-ensure)
   :hook (js-mode . eglot-ensure)
   :hook (js-ts-mode . eglot-ensure)
-  :defer t
+  :general
+  (:keymaps 'eglot-mode-map
+            :states 'normal
+            "ga" #'eglot-code-actions)
   :init
   (setq eglot-sync-connect 1
         eglot-autoshutdown t
-        eglot-auto-display-help-buffer nil)
+        eglot-auto-display-help-buffer nil
+        eglot-code-action-indications nil)
   :config
   ;; (add-to-list 'eglot-server-programs
   ;;              '(angular-ts-mode . ,(eglot-alternatives
@@ -106,20 +122,20 @@
 
   (add-to-list 'eglot-server-programs
                '(angular-ts-mode "node"
-                                 "/usr/lib/node_modules/@angular/language-server"
+                                 "/Program Files/nodejs/node_modules/@angular/language-server"
                                  "--ngProbeLocations"
-                                 "/usr/lib/node_modules"
+                                 "/Program Files/nodejs/node_modules"
                                  "--tsProbeLocations"
-                                 "/usr/lib/node_modules"
+                                 "/Program Files/nodejs/node_modules"
                                  "--stdio"))
 
   (cl-callf plist-put eglot-events-buffer-config :size 0))
 
 ;; TODO: Embark
-(use-package consult-eglot
-  :ensure t
-  :commands consult-eglot-symbols
-  :defer t)
+;; (use-package consult-eglot
+;;   :ensure t
+;;   :commands consult-eglot-symbols
+;;   :defer t)
 
 (use-package js-pkg-mode
   :ensure (js-pkg-mode :host "github.com" :repo "https://github.com/ovistoica/js-pkg-mode")
@@ -128,37 +144,37 @@
 
 (add-hook 'compilation-mode-hook '(lambda () (setq toggle-truncate-lines nil)))
 
-;(use-package npm
-; :ensure t
-;  :defer t
-;  :init
-; (setq compilation-scroll-output t)
-;  :config
-;  (add-to-list 'compilation-error-regexp-alist-alist
-;               '(angular-warning
-;                 "^Deprecation Warning on line \\([0-9]+\\), column \\([0-9]+\\) of \\(.+\\):"
-;                 3 1 2 1))
-;  (add-to-list 'compilation-error-regexp-alist-alist
-;               '(angular-error
-;                 "^Error: \\(.*\\):\\([0-9]+\\):\\([0-9]+\\) - error TS[0-9]+:"
-;                 1 2 3 2))
-;  (add-to-list 'compilation-error-regexp-alist 'angular-warning)
-;  (add-to-list 'compilation-error-regexp-alist 'angular-error)
-;  (add-hook 'npm-mode-hook (lambda ()
-;                             (setq-local compilation-error-regexp-alist (list 'angular-warning ;'angular-error))))
-;  ;; (add-hook 'npm-mode-hook (lambda () (visual-line-mode t)))
-;  (add-hook 'npm-mode-hook (lambda () (toggle-truncate-lines nil)))
-;  ;; (add-hook 'npm-mode-hook 'ansi-colorful-mode)
-;  ;; (defun ansi-enable-disable ()
- ; ;;   (progn
- ; ;;     (ansi-colorful--disable)
- ; ;;     (ansi-colorful--enable)))
-;  ;; (debounce! ansi-enable-disable 0.2)
-;  ;; (add-hook 'compilation-filter-hook #'ansi-enable-disable)
-;  (advice-add 'npm-common--compile :around
-;              (lambda (orig-fun &rest args)
-;                (let ((default-directory (project-root (project-current t))))
-;                  (apply orig-fun args)))))
+                                        ;(use-package npm
+                                        ; :ensure t
+                                        ;  :defer t
+                                        ;  :init
+                                        ; (setq compilation-scroll-output t)
+                                        ;  :config
+                                        ;  (add-to-list 'compilation-error-regexp-alist-alist
+                                        ;               '(angular-warning
+                                        ;                 "^Deprecation Warning on line \\([0-9]+\\), column \\([0-9]+\\) of \\(.+\\):"
+                                        ;                 3 1 2 1))
+                                        ;  (add-to-list 'compilation-error-regexp-alist-alist
+                                        ;               '(angular-error
+                                        ;                 "^Error: \\(.*\\):\\([0-9]+\\):\\([0-9]+\\) - error TS[0-9]+:"
+                                        ;                 1 2 3 2))
+                                        ;  (add-to-list 'compilation-error-regexp-alist 'angular-warning)
+                                        ;  (add-to-list 'compilation-error-regexp-alist 'angular-error)
+                                        ;  (add-hook 'npm-mode-hook (lambda ()
+                                        ;                             (setq-local compilation-error-regexp-alist (list 'angular-warning ;'angular-error))))
+                                        ;  ;; (add-hook 'npm-mode-hook (lambda () (visual-line-mode t)))
+                                        ;  (add-hook 'npm-mode-hook (lambda () (toggle-truncate-lines nil)))
+                                        ;  ;; (add-hook 'npm-mode-hook 'ansi-colorful-mode)
+                                        ;  ;; (defun ansi-enable-disable ()
+                                        ; ;;   (progn
+                                        ; ;;     (ansi-colorful--disable)
+                                        ; ;;     (ansi-colorful--enable)))
+                                        ;  ;; (debounce! ansi-enable-disable 0.2)
+                                        ;  ;; (add-hook 'compilation-filter-hook #'ansi-enable-disable)
+                                        ;  (advice-add 'npm-common--compile :around
+                                        ;              (lambda (orig-fun &rest args)
+                                        ;                (let ((default-directory (project-root (project-current t))))
+                                        ;                  (apply orig-fun args)))))
 
 ;; (use-package fancy-compilation
 ;;   :commands (fancy-compilation-mode))
@@ -170,46 +186,61 @@
   :ensure nil
   :defer t
   :hook (prog-mode . flymake-mode)
+  :init
+  ;; (add-hook 'flymake-mode-hook (lambda () (set-fringe-style '(nil . 4))))
+  ;; (add-hook 'flymake-mode (lambda () (fringe-mode '(left-fringe-width . 4))))
+  ;; (add-hook 'flymake-mode-hook
+  ;;           (lambda ()
+  ;;             (set-fringe-style (cons (frame-parameter nil 'left-fringe) 4))))
+
+
+  ;; A non-descript, left-pointing arrow
+  (define-fringe-bitmap 'flymake-fringe-bitmap-double-arrow [16 48 112 240 112 48 16] nil nil 'center)
+
+  (setq flymake-error-bitmap '( flymake-fringe-bitmap-double-arrow modus-themes-prominent-error ))
+  (setq flymake-warning-bitmap '( flymake-fringe-bitmap-double-arrow modus-themes-prominent-warning ))
+  (setq flymake-note-bitmap '( flymake-fringe-bitmap-double-arrow modus-themes-prominent-note ))
+
   :config
   ;; (setq flymake-show-diagnostics-at-end-of-line 'short)
 
-  (setq flymake-indicator-type 'margins)
-  (setq flymake-margin-indicator-position 'right-margin)
-  
-  ;; This works but the advice method doesn't
-  ;;   (defun flymake-diagnostic-oneliner (diag &optional nopaintp)
-  ;;     "Get truncated one-line text string for diagnostic DIAG.
-  ;; This is useful for displaying the DIAG's text to the user in
-  ;; confined spaces, such as the echo area.  Unless NOPAINTP is t,
-  ;; propertize returned text with the `echo-face' property of DIAG's
-  ;; type."
-  ;;     (let* ((txt (flymake-diagnostic-text diag))
-  ;;            ;; Remove leading 'typescript [####]: ' if present
-  ;;            (txt (if (string-match "^typescript \\[[0-9]+\\]: " txt)
-  ;;                     (substring txt (match-end 0))
-  ;;                   txt))
-  ;;            ;; Truncate text at the first newline
-  ;;            (txt (substring txt 0 (cl-loop for i from 0 for a across txt
-  ;;                                           when (eq a ?\n) return i))))
-  ;;       (if nopaintp txt
-  ;;         (propertize txt 'face
-  ;;                     (flymake--lookup-type-property
-  ;;                      (flymake-diagnostic-type diag) 'echo-face 'flymake-error)))))
+  (setq flymake-indicator-type 'fringes) 
+  (setq flymake-fringe-indicator-position 'right-fringe))
 
-  ;;   (defun flymake-diagnostic-oneliner-remove-typescript-prefix (orig-fun diag &optional nopaintp)
-  ;;   "Advice to remove 'typescript [####]: ' prefix from DIAG before calling ORIG-FUN."
-  ;;   (let ((new-diag diag))
-  ;;     (when-let ((txt (flymake-diagnostic-text diag)))
-  ;;       ;; Check for and remove the prefix 'typescript [####]: '
-  ;;       (when (string-match "^typescript \\[[0-9]+\\]: " txt)
-  ;;         (setf (flymake-diagnostic-text diag)
-  ;;               (substring txt (match-end 0)))))
-  ;;     ;; Call the original function with the modified diagnostic
-  ;;     (funcall orig-fun new-diag nopaintp)))
-  ;; 
-  ;; (advice-add 'flymake-diagnostic-oneliner :around
-  ;;             #'flymake-diagnostic-oneliner-remove-typescript-prefix)
-  )
+;; This works but the advice method doesn't
+;;   (defun flymake-diagnostic-oneliner (diag &optional nopaintp)
+;;     "Get truncated one-line text string for diagnostic DIAG.
+;; This is useful for displaying the DIAG's text to the user in
+;; confined spaces, such as the echo area.  Unless NOPAINTP is t,
+;; propertize returned text with the `echo-face' property of DIAG's
+;; type."
+;;     (let* ((txt (flymake-diagnostic-text diag))
+;;            ;; Remove leading 'typescript [####]: ' if present
+;;            (txt (if (string-match "^typescript \\[[0-9]+\\]: " txt)
+;;                     (substring txt (match-end 0))
+;;                   txt))
+;;            ;; Truncate text at the first newline
+;;            (txt (substring txt 0 (cl-loop for i from 0 for a across txt
+;;                                           when (eq a ?\n) return i))))
+;;       (if nopaintp txt
+;;         (propertize txt 'face
+;;                     (flymake--lookup-type-property
+;;                      (flymake-diagnostic-type diag) 'echo-face 'flymake-error)))))
+
+;;   (defun flymake-diagnostic-oneliner-remove-typescript-prefix (orig-fun diag &optional nopaintp)
+;;   "Advice to remove 'typescript [####]: ' prefix from DIAG before calling ORIG-FUN."
+;;   (let ((new-diag diag))
+;;     (when-let ((txt (flymake-diagnostic-text diag)))
+;;       ;; Check for and remove the prefix 'typescript [####]: '
+;;       (when (string-match "^typescript \\[[0-9]+\\]: " txt)
+;;         (setf (flymake-diagnostic-text diag)
+;;               (substring txt (match-end 0)))))
+;;     ;; Call the original function with the modified diagnostic
+;;     (funcall orig-fun new-diag nopaintp)))
+;; 
+;; (advice-add 'flymake-diagnostic-oneliner :around
+;;             #'flymake-diagnostic-oneliner-remove-typescript-prefix)
+;; )
 
 ;; (use-package sideline-flymake
 ;;   :hook (flymake-mode . sideline-mode)
@@ -248,12 +279,13 @@
   :hook (elpaca-after-init . global-corfu-mode)
   :general
   (:keymaps 'corfu-mode-map
-            :states 'insert
+            ;; :states 'insert
             "C-@" #'completion-at-point
             "C-SPC" #'completion-at-point
             "C-n" #'corfu-next
             "C-p" #'corfu-previous)
   (:keymaps 'corfu-map
+            :states 'insert
             "C-SPC" #'corfu-insert-separator
             "C-k" #'corfu-previous
             "C-j" #'corfu-next
@@ -424,25 +456,33 @@
 ;;   (setq diff-hl-margin-symbols-alist
 ;;         ((insert . "+") (delete . "-") (change . "!") (unknown . "?") (ignored . "i"))))
 
-(use-package indent-bars
-  :hook (prog-mode . indent-bars-mode)
-  ;; :custom
-  ;; (indent-bars-prefer-character "-")
-  :init
-  (advice-add 'line-move-to-column :around
-              (defun my/indent-bars-prevent-passing-newline (orig col &rest r)
-	            (if-let ((indent-bars-mode)
-		                 (nlp (line-end-position))
-		                 (dprop (get-text-property nlp 'display))
-		                 ((seq-contains-p dprop ?\n))
-		                 ((> col (- nlp (point)))))
-	                (goto-char nlp)
-	              (apply orig col r))))
+;; (use-package indent-bars
+;;   :hook (prog-mode . indent-bars-mode)
+;;   :hook (angular-ts-mode . indent-bars-mode)
+;;   :init
+;;   ;; (add-hook 'indent-bars-mode (lambda () (advice-add 'line-move-to-column :around
+;;   ;;             (defun my/indent-bars-prevent-passing-newline (orig col &rest r)
+;;   ;;               (if-let ((indent-bars-mode)
+;;   ;;   	                 (nlp (line-end-position))
+;;   ;;   	                 (dprop (get-text-property nlp 'display))
+;;   ;;   	                 ((seq-contains-p dprop ?\n))
+;;   ;;   	                 ((> col (- nlp (point)))))
+;;   ;;                   (goto-char nlp)
+;;   ;;                 (apply orig col r))))))
+;; 
+;;   ;; (setq ;; indent-bars-prefer-character t
+;;   ;;  ;; indent-bars-no-stipple-char ?\┃
+;;   ;;  indent-bars-color-by-depth nil
+;;   ;;  ;; indent-bars-color '("#595959")
+;;   ;;  indent-bars-color '("#ddd")
+;;   ;;  indent-bars-highlight-current-depth '(:color "#212121"))
+;; 
+;; (setopt indent-bars-color '(highlight :face-bg t :blend 0.4)
+;; 		indent-bars-pattern "."
+;;         indent-bars-starting-column 0
+;; 		indent-bars-color-by-depth '(:regexp "outline-\\([0-9]+\\)" :blend 0.8)
+;; 		;; indent-bars-highlight-current-depth '(:blend 0.8 :width 0.3 :pad 0.3 :pattern ".")
+;; 		indent-bars-highlight-current-depth nil
+;; 		indent-bars-pad-frac 0.3)
+;; )
 
-  (setq ;; indent-bars-prefer-character t
-   ;; indent-bars-no-stipple-char ?\┃
-   indent-bars-color-by-depth nil
-   indent-bars-starting-column 0
-   ;; indent-bars-color '("#595959")
-   indent-bars-color '("#ddd")
-   indent-bars-highlight-current-depth '(:color "#000000")))

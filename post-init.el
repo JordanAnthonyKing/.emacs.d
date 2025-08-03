@@ -3,7 +3,7 @@
 ;; Auto-revert in Emacs is a feature that automatically updates the
 ;; contents of a buffer to reflect changes made to the underlying file
 ;; on disk.
-(add-hook 'elpaca-after-init-hook #'global-auto-revert-mode)
+;; (add-hook 'elpaca-after-init-hook #'global-auto-revert-mode)
 
 ;; recentf is an Emacs package that maintains a list of recently
 ;; accessed files, making it easier to reopen files you have worked on
@@ -70,8 +70,6 @@
 ;; Add the local lisp directory to the load-path
 (add-to-list 'load-path (expand-file-name "themes" minimal-emacs-user-directory))
 (add-to-list 'load-path (expand-file-name "lisp" minimal-emacs-user-directory))
-
-
 
 ;; (use-package nano-theme
 ;;   :ensure nil
@@ -142,11 +140,25 @@
 ;; 
 ;;   )
 
-(use-package modus-themes
-  :ensure nil
-  :load-path "themes/"
-  :config
-  (load-theme 'modus-operandi :no-confirm))
+;; (use-package modus-themes
+;;   :ensure nil
+;;   ;; :load-path "themes/"
+;;   :init
+;;   (setq modus-themes-italic-constructs nil
+;;         modus-themes-bold-constructs nil
+;;         modus-themes-mixed-fonts nil
+;;         modus-themes-variable-pitch-ui nil
+;;         modus-themes-custom-auto-reload t
+;;         modus-themes-disable-other-themes t
+;;         ;; modus-themes-prompts '(italic bold)
+;;         modus-themes-prompts nil
+;;         ;; modus-themes-completions
+;;         ;;     '((matches . (extrabold))
+;;         ;;         (selection . (semibold italic text-also)))
+;; 
+;;         )
+;;   :config
+;;   (load-theme 'modus-operandi :no-confirm))
 
 (use-package project
   :ensure nil
@@ -217,17 +229,52 @@
 ;  :hook (elpaca-after-init . pulsar-global-mode))
 
 ;; (set-face-attribute 'default nil :font "Berkeley Mono-14")
-(set-face-attribute 'default nil :font "Berkeley Mono ExtraCondensed-10")
+(set-face-attribute 'default nil :font "Berkeley Mono SemiCondensed-9")
 
 (use-package stillness-mode
   :ensure (stillness-mode :host "github.com" :repo "neeasade/stillness-mode.el")
   :hook (elpaca-after-init . stillness-mode))
 
-;; (use-package doom-themes
+;; (use-package standard-themes
+;;   :ensure nil
+;;   :load-path "themes/"
+;;   :defer nil
+;;   :init
+;;   (setq standard-themes-bold-constructs t
+;;         standard-themes-italic-constructs t
+;;         standard-themes-disable-other-themes t
+;;         standard-themes-mixed-fonts nil
+;;         standard-themes-variable-pitch-ui nil
+;;         ;; standard-themes-prompts '(extrabold italic)
+;;         ;; standard-themes-to-toggle '(standard-light standard-dark)
+;;         ;; standard-themes-to-rotate '(standard-light standard-light-tinted standard-dark standard-dark-tinted
+;;         ) 
+;;   :config
+;;   (standard-themes-load-theme 'standard-light)
+;;   )
+
+(use-package doom-themes
+  :ensure (doom-themes :host "github.com" :repo "doomemacs/themes")
+  :config
+  ;; Global settings (defaults)
+  (setq doom-themes-enable-bold t   ; if nil, bold is universally disabled
+        doom-themes-enable-italic t) ; if nil, italics is universally disabled
+  (load-theme 'doom-earl-grey t)
+
+  ;; Enable flashing mode-line on errors
+  (doom-themes-visual-bell-config)
+  ;; Enable custom neotree theme (nerd-icons must be installed!)
+  ;; (doom-themes-neotree-config)
+  ;; or for treemacs users
+  ;; (setq doom-themes-treemacs-theme "doom-atom") ; use "doom-colors" for less minimal icon theme
+  ;; (doom-themes-treemacs-config)
+  ;; Corrects (and improves) org-mode's native fontification.
+  (doom-themes-org-config))
+
+;; (use-package kanagawa-themes
 ;;   :ensure t
 ;;   :config
-;;   (load-theme 'doom-one t)
-;;   (doom-themes-org-config))
+;;   (load-theme 'kanagawa-wave))
 
 ;; (use-package doom-modeline
 ;;   :ensure (doom-modeline :host "github.com" :repo "JordanAnthonyKing/doom-modeline")
@@ -251,11 +298,6 @@
 ;;         doom-modeline-battery nil
 ;;         doom-modeline-time nil)
 ;;   (doom-modeline-mode 1))
-
-;; (use-package miasma-theme
-;;   :ensure (miasma-theme :host github :repo "daut/miasma-theme.el")
-;;   :config
-;;   (load-theme 'miasma t))
 
 ;; (use-package almost-mono-themes
   ;; :ensure t
@@ -402,9 +444,10 @@
                                   ;; display (min-width (6.0))
                                   )
                                  mode-line-frame-identification mode-line-buffer-identification "   "
-                                 mode-line-position " " (:eval (anzu--update-mode-line)) 
+                                 ;; mode-line-position " "
+                                 (:eval (anzu--update-mode-line)) 
                                  mode-line-format-right-align
-                                 (project-mode-line project-mode-line-format) " "
+                                 ;; (project-mode-line project-mode-line-format) " "
                                  (vc-mode vc-mode) " " mode-line-misc-info flymake-mode-line-counters " ")
               )
 
@@ -433,62 +476,27 @@
 ;;   :load-path "lisp/"
 ;;   :after vertico)
 
-;; (use-package nano-theme
-;;   :ensure t)
 ;; (use-package book-mode
 ;;   :ensure nil
 ;;   :load-path "lisp/")
 
-;; (minimal-emacs-load-user-init "chatgpt.el")
+(minimal-emacs-load-user-init "chatgpt.el")
 
-(use-package gptel
-  :ensure t
-  :defer t
-  :commands (gptel gptel-add gptel-menu)
-  :config
-  (setq
-   gptel-model 'deepseek-r1:8b
-   gptel-backend (gptel-make-ollama "Ollama"             ;Any name of your choosing
-                      :host "localhost:11434"               ;Where it's running
-                      :stream t                             ;Stream responses
-                      :models '(deepseek-r1:8b)))          ;List of models
-
-  ;; (setq gptel-use-header-line nil)
-  (add-hook 'gptel-mode-hook #'visual-line-mode)
-  ;; (add-hook 'gptel-mode-hook #'olivetti-mode)
-  )
-
-
-;; (use-package minuet
-;;   :ensure (minuet :host "github.com" :repo "milanglacier/minuet-ai.el")
-;;   :bind
-;;   (("M-y" . #'minuet-complete-with-minibuffer) ;; use minibuffer for completion
-;;    ("M-i" . #'minuet-show-suggestion) ;; use overlay for completion
-;;    :map minuet-active-mode-map
-;;    ;; These keymaps activate only when a minuet suggestion is displayed in the current buffer
-;;    ("M-p" . #'minuet-previous-suggestion) ;; invoke completion or cycle to next completion
-;;    ("M-n" . #'minuet-next-suggestion) ;; invoke completion or cycle to previous completion
-;;    ("M-A" . #'minuet-accept-suggestion) ;; accept whole completion
-;;    ;; Accept the first line of completion, or N lines with a numeric-prefix:
-;;    ;; e.g. C-u 2 M-a will accepts 2 lines of completion.
-;;    ("M-a" . #'minuet-accept-suggestion-line)
-;;    ("M-e" . #'minuet-dismiss-suggestion))
-;; 
-;;   :init
-;;   ;; if you want to enable auto suggestion.
-;;   ;; Note that you can manually invoke completions without enable minuet-auto-suggestion-mode
-;;   (add-hook 'prog-mode-hook #'minuet-auto-suggestion-mode)
-;; 
+;; (use-package gptel
+;;   :ensure t
+;;   :defer t
+;;   :commands (gptel gptel-add gptel-menu)
 ;;   :config
-;;   (setq minuet-provider 'openai-fim-compatible)
-;;   (plist-put minuet-openai-fim-compatible-options :end-point "http://localhost:11434/v1/completions")
-;;   ;; an arbitrary non-null environment variable as placeholder
-;;   (plist-put minuet-openai-fim-compatible-options :name "Ollama")
-;;   (plist-put minuet-openai-fim-compatible-options :api-key "TERM")
-;;   (plist-put minuet-openai-fim-compatible-options :model "qwen2.5-coder:3b")
+;;   (setq
+;;    gptel-model 'deepseek-r1:8b
+;;    gptel-backend (gptel-make-ollama "Ollama"             ;Any name of your choosing
+;;                       :host "localhost:11434"               ;Where it's running
+;;                       :stream t                             ;Stream responses
+;;                       :models '(deepseek-r1:8b)))          ;List of models
 ;; 
-;;   (minuet-set-optional-options minuet-openai-fim-compatible-options :max_tokens 256)
-;; 
-;;   ;; Required when defining minuet-ative-mode-map in insert/normal states.
-;;   ;; Not required when defining minuet-active-mode-map without evil state.
-;;   (add-hook 'minuet-active-mode-hook #'evil-normalize-keymaps))
+;;   ;; (setq gptel-use-header-line nil)
+;;   (add-hook 'gptel-mode-hook #'visual-line-mode)
+;;   ;; (add-hook 'gptel-mode-hook #'olivetti-mode)
+;;   )
+
+

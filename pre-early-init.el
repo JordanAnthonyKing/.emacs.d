@@ -16,17 +16,17 @@
 ;; (set-display-table-slot standard-display-table 'wrap (make-glyph-code ?–))
 
 (setq default-frame-alist
-      '((height . 40) (width  . 75) (left-fringe . 1) (right-fringe . 1)
+      '((height . 40) (width  . 75) (left-fringe . 4) (right-fringe . 4)
         ;; (internal-border-width . 4)
-        (vertical-scroll-bars . nil)
-        (bottom-divider-width . 1) (right-divider-width . 1)))
+        (vertical-scroll-bars . t)
+        (bottom-divider-width . 0) ;; (right-divider-width . 4)
+        ))
 
 (modify-frame-parameters nil default-frame-alist)
 ;; (setq-default pop-up-windows nil)
 
 (setq widget-image-enable nil)
 (setq-default widget-image-enable nil)
-;; (setq use-package-compute-statistics t)
 ;; (setq mode-line-format nil)
 ;; (setq-default mode-line-format nil)
 

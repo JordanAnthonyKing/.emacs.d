@@ -21,7 +21,7 @@
   :ensure (magit :branch "main" :host github :repo "magit/magit" :pre-build ("make" "info"))
   :commands (magit-status magit-file-delete)
   :init
-  (setq magit-auto-revert-mode t)
+  (setq magit-auto-revert-mode nil)
   :config
   (setq magit-display-buffer-function 'magit-display-buffer-same-window-except-diff-v1)
   ;; (setq magit-refresh-status-buffer nil)
